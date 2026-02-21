@@ -3,149 +3,324 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fast8 - Final Version</title>
+    <title>Fast8 Admin - Premium Dashboard</title>
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        :root { --primary: #e63946; --dark: #1d3557; --accent: #ffb703; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; margin: 0; padding-bottom: 90px; }
-        header { background: var(--primary); color: white; padding: 20px; text-align: center; border-radius: 0 0 20px 20px; }
-        .tabs { display: flex; overflow-x: auto; padding: 15px; gap: 10px; position: sticky; top: 0; background: #f8f9fa; z-index: 100; border-bottom: 1px solid #ddd; }
-        .tab { background: white; padding: 10px 20px; border-radius: 20px; border: 1px solid #ddd; font-weight: bold; cursor: pointer; white-space: nowrap; }
-        .tab.active { background: var(--primary); color: white; border: none; }
-        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
-        .p-card { background: white; border-radius: 15px; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); text-align: center; }
-        .p-price { color: var(--primary); font-weight: bold; margin: 5px 0; }
-        .add-btn { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; font-weight: bold; }
-        .cart-bar { position: fixed; bottom: 20px; left: 15px; right: 15px; background: var(--dark); color: white; padding: 15px 20px; border-radius: 15px; display: none; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
-        #cart-modal, #track-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .checkout-input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .track-card { background: #fdfdfd; padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        :root {
+            --red: #e63946;
+            --yellow: #ffb703;
+            --dark: #1d3557;
+            --light: #f8f9fa;
+            --grey: #6c757d;
+        }
+
+        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--light); color: var(--dark); padding-bottom: 80px; }
+
+        /* --- Header & Branding --- */
+        header {
+            background: var(--red);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-bottom-left-radius: 25px;
+            border-bottom-right-radius: 25px;
+            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
+        }
+
+        /* --- Stats Grid --- */
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-bottom: 4px solid var(--yellow);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-card i { font-size: 24px; color: var(--red); margin-bottom: 10px; }
+        .stat-card h3 { font-size: 18px; font-weight: 700; }
+        .stat-card p { font-size: 12px; color: var(--grey); }
+
+        /* --- Section Styling --- */
+        .section { padding: 0 20px 20px 20px; }
+        .section-title { 
+            font-size: 18px; 
+            margin-bottom: 15px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+        }
+
+        /* --- Order Cards (Zomato Style) --- */
+        .order-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid #eee;
+            position: relative;
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .pending { background: #fff3cd; color: #856404; }
+        .delivered { background: #d4edda; color: #155724; }
+
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 13px;
+        }
+
+        .btn-primary { background: var(--red); color: white; width: 100%; margin-top: 10px; }
+        .btn-outline { background: transparent; border: 1px solid var(--red); color: var(--red); }
+
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .nav-item { text-align: center; color: var(--grey); text-decoration: none; font-size: 11px; }
+        .nav-item.active { color: var(--red); }
+        .nav-item i { font-size: 20px; display: block; }
+
+        /* --- Modal for Forms --- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .modal-content { background: white; border-radius: 20px; padding: 25px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 13px; margin-bottom: 5px; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; }
+
+        /* Hidden class for SPA behavior */
+        .page-content { display: none; }
+        .page-content.active { display: block; }
     </style>
 </head>
 <body>
 
-<header><h2>Fast8 Delivery 🚀</h2></header>
+<header>
+    <h2 style="font-weight: 700;">Fast8 Bondhu</h2>
+    <p style="font-size: 12px;">Admin Management System</p>
+</header>
 
-<div class="tabs">
-    <div class="tab active" id="tab-grocery" onclick="loadProducts('Grocery')">Grocery</div>
-    <div class="tab" id="tab-tiffin" onclick="loadProducts('Tiffin')">Tiffin</div>
-    <div class="tab" onclick="toggleTrack(true)">📍 Track Order</div>
+<div id="page-dashboard" class="page-content active">
+    <div class="stats-container">
+        <div class="stat-card">
+            <i class="fas fa-shopping-bag"></i>
+            <h3 id="stat-orders">0</h3>
+            <p>Today Orders</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-wallet"></i>
+            <h3 id="stat-sales">₹0</h3>
+            <p>Total Sales</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-motorcycle"></i>
+            <h3 id="stat-riders">0</h3>
+            <p>Active Riders</p>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3 id="stat-stock">0</h3>
+            <p>Low Stock</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">
+            <b>Live Orders</b>
+            <span style="font-size: 12px; color: var(--red);">View All</span>
+        </div>
+        <div id="live-orders-list">
+            </div>
+    </div>
 </div>
 
-<div id="product-list" class="product-grid"></div>
-
-<div class="cart-bar" id="cart-bar">
-    <div id="cart-info">0 Items | ₹0</div>
-    <button onclick="toggleCart(true)" style="background:var(--accent); border:none; padding:10px 20px; border-radius:10px; font-weight:bold; cursor:pointer;">View Cart</button>
+<div id="page-inventory" class="page-content">
+    <div class="section" style="padding-top: 20px;">
+        <div class="section-title">
+            <b>Product Stock</b>
+            <button class="btn btn-outline" onclick="openModal('modal-product')">+ Add</button>
+        </div>
+        <div id="product-list">
+            </div>
+    </div>
 </div>
 
-<div id="cart-modal">
-    <h3 onclick="toggleCart(false)" style="color:var(--primary); cursor:pointer;"><i class="fas fa-arrow-left"></i> Back</h3>
-    <h2>Review Order</h2>
-    <div id="cart-items-preview"></div>
-    <hr>
-    <input type="text" id="custName" class="checkout-input" placeholder="Your Name">
-    <input type="tel" id="custPhone" class="checkout-input" placeholder="Mobile Number">
-    <textarea id="custAddr" class="checkout-input" placeholder="Full Delivery Address"></textarea>
-    <h3 id="final-bill">Total: ₹0</h3>
-    <button class="add-btn" style="padding:15px; font-size:18px;" onclick="placeOrder()">Confirm Order (COD)</button>
+<div class="bottom-nav">
+    <a href="javascript:void(0)" class="nav-item active" onclick="switchPage('dashboard', this)">
+        <i class="fas fa-home"></i>Home
+    </a>
+    <a href="javascript:void(0)" class="nav-item" onclick="switchPage('inventory', this)">
+        <i class="fas fa-boxes"></i>Stock
+    </a>
+    <a href="javascript:void(0)" class="nav-item" onclick="switchPage('riders', this)">
+        <i class="fas fa-users"></i>Riders
+    </a>
+    <a href="javascript:void(0)" class="nav-item" onclick="switchPage('reports', this)">
+        <i class="fas fa-chart-pie"></i>Reports
+    </a>
 </div>
 
-<div id="track-modal">
-    <h3 onclick="toggleTrack(false)" style="color:var(--primary); cursor:pointer;"><i class="fas fa-arrow-left"></i> Back</h3>
-    <h2>Track Your Order</h2>
-    <input type="tel" id="trackPhone" class="checkout-input" placeholder="Enter Mobile Number">
-    <button class="add-btn" onclick="trackOrders()">Find My Orders</button>
-    <div id="tracking-results" style="margin-top:20px;"></div>
+<div id="modal-product" class="modal">
+    <div class="modal-content">
+        <h3>Add New Product</h3><br>
+        <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" id="p-name" placeholder="e.g. Fresh Tomato">
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select id="p-cat">
+                <option value="vegetables">Vegetables</option>
+                <option value="grocery">Grocery</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Price (₹)</label>
+            <input type="number" id="p-price">
+        </div>
+        <div class="form-group">
+            <label>Unit (kg/pc/pkt)</label>
+            <input type="text" id="p-unit">
+        </div>
+        <div class="form-group">
+            <label>Initial Stock</label>
+            <input type="number" id="p-stock">
+        </div>
+        <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+        <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="closeModal('modal-product')">Cancel</button>
+    </div>
 </div>
 
 <script>
+    // --- FIREBASE INITIALIZATION ---
     const firebaseConfig = {
-        apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
+        apiKey: "YOUR_API_KEY",
         authDomain: "fast8delivery-a90b4.firebaseapp.com",
         projectId: "fast8delivery-a90b4",
+        storageBucket: "fast8delivery-a90b4.appspot.com",
+        messagingSenderId: "200027434311",
         appId: "1:200027434311:web:9bc6caf3db527b602c3062"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let cart = {}, allProducts = {};
-
-    function loadProducts(cat) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        if(cat === 'Grocery') document.getElementById('tab-grocery').classList.add('active');
-        if(cat === 'Tiffin') document.getElementById('tab-tiffin').classList.add('active');
-
-        db.collection("products").where("category", "==", cat).onSnapshot(snap => {
-            const list = document.getElementById('product-list');
-            list.innerHTML = "";
-            snap.forEach(doc => {
-                const p = doc.data();
-                allProducts[doc.id] = p;
-                list.innerHTML += `<div class="p-card"><b>${p.name}</b><div class="p-price">₹${p.price}</div><button class="add-btn" onclick="addToCart('${doc.id}')">Add +</button></div>`;
-            });
-        });
+    // --- NAVIGATION LOGIC ---
+    function switchPage(pageId, el) {
+        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('page-' + pageId).classList.add('active');
+        el.classList.add('active');
     }
 
-    function addToCart(id) {
-        cart[id] = (cart[id] || 0) + 1;
-        updateCartUI();
-    }
+    function openModal(id) { document.getElementById(id).style.display = 'block'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    function updateCartUI() {
-        let total = 0, count = 0;
-        for(let id in cart) { count += cart[id]; total += allProducts[id].price * cart[id]; }
-        document.getElementById('cart-bar').style.display = count > 0 ? 'flex' : 'none';
-        document.getElementById('cart-info').innerText = `${count} Items | ₹${total}`;
-        document.getElementById('final-bill').innerText = `Total: ₹${total}`;
-    }
-
-    function toggleCart(s) {
-        document.getElementById('cart-modal').style.display = s ? 'block' : 'none';
-        if(s) {
-            const preview = document.getElementById('cart-items-preview');
-            preview.innerHTML = "";
-            for(let id in cart) { preview.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${allProducts[id].name} x ${cart[id]}</span><b>₹${allProducts[id].price * cart[id]}</b></div>`; }
-        }
-    }
-
-    function toggleTrack(s) { document.getElementById('track-modal').style.display = s ? 'block' : 'none'; }
-
-    function trackOrders() {
-        const phone = document.getElementById('trackPhone').value;
-        const res = document.getElementById('tracking-results');
-        if(!phone) return alert("Enter Phone!");
-        res.innerHTML = "Searching...";
-        
-        db.collection("orders").where("customerPhone", "==", phone).onSnapshot(snap => {
-            res.innerHTML = snap.empty ? "No orders found." : "";
-            snap.forEach(doc => {
-                const d = doc.data();
-                res.innerHTML += `<div class="track-card"><b>Status: ${d.status}</b><br><small>${d.items}</small><br><b>Total: ₹${d.totalAmount}</b></div>`;
-            });
-        });
-    }
-
-    function placeOrder() {
-        const name = document.getElementById('custName').value;
-        const phone = document.getElementById('custPhone').value;
-        const addr = document.getElementById('custAddr').value;
-        if(!name || !phone || !addr) return alert("Fill all info!");
-
-        let items = "", total = 0;
-        for(let id in cart) { items += `${allProducts[id].name} (${cart[id]}), `; total += allProducts[id].price * cart[id]; }
-
-        db.collection("orders").add({
-            customerName: name, customerPhone: phone, customerAddress: addr, items, 
-            totalAmount: total, status: "Pending", 
-            riderEarning: 30, // Fixed Rider Earning to avoid 'undefined'
+    // --- PRODUCT MANAGEMENT ---
+    function saveProduct() {
+        const product = {
+            name: document.getElementById('p-name').value,
+            category: document.getElementById('p-cat').value,
+            price: Number(document.getElementById('p-price').value),
+            unit: document.getElementById('p-unit').value,
+            stock: Number(document.getElementById('p-stock').value),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => { alert("Order Placed!"); cart = {}; updateCartUI(); toggleCart(false); });
+        };
+
+        db.collection("products").add(product).then(() => {
+            alert("Product added successfully!");
+            closeModal('modal-product');
+        });
     }
 
-    loadProducts('Grocery');
+    // --- REALTIME LISTENERS ---
+    function initDashboard() {
+        // Listen for Orders
+        db.collection("orders").onSnapshot(snap => {
+            const list = document.getElementById('live-orders-list');
+            let sales = 0;
+            list.innerHTML = "";
+            
+            snap.forEach(doc => {
+                const order = doc.data();
+                sales += order.totalAmount || 0;
+                list.innerHTML += `
+                    <div class="order-card">
+                        <span class="status-badge ${order.status.toLowerCase()}">${order.status}</span>
+                        <b>#${doc.id.substring(0,6)} - ${order.customerName}</b>
+                        <p style="font-size:12px; margin:5px 0;">Items: ${order.items}</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight:700; color:var(--red);">₹${order.totalAmount}</span>
+                            <button class="btn btn-outline" onclick="generateInvoice('${doc.id}')">Invoice</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('stat-orders').innerText = snap.size;
+            document.getElementById('stat-sales').innerText = "₹" + sales;
+        });
+
+        // Listen for Products (Stock Alerts)
+        db.collection("products").onSnapshot(snap => {
+            let lowStockCount = 0;
+            snap.forEach(doc => {
+                if(doc.data().stock < 5) lowStockCount++;
+            });
+            document.getElementById('stat-stock').innerText = lowStockCount;
+        });
+    }
+
+    // Initialize logic
+    initDashboard();
+
 </script>
 </body>
 </html>
