@@ -2,38 +2,39 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Fast8 Admin Dashboard</title>
+    <title>Fast8 Admin Pro - Final Fix</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; display: flex; background: #f4f7f6; }
-        .sidebar { width: 250px; background: #2c3e50; color: white; height: 100vh; padding: 20px; position: fixed; }
-        .main { margin-left: 290px; padding: 20px; width: 100%; }
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; }
-        .order-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 8px solid #e63946; }
-        .btn-assign { background: #3498db; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
+        body { font-family: 'Segoe UI', sans-serif; display: flex; margin: 0; background: #f0f2f5; }
+        .sidebar { width: 220px; background: #1a1a1a; color: white; height: 100vh; padding: 20px; position: fixed; }
+        .main { margin-left: 260px; padding: 20px; width: calc(100% - 280px); }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); text-align: center; border-bottom: 4px solid #e63946; }
+        .order-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 6px solid #e63946; }
+        .map-box { height: 250px; border-radius: 10px; margin-top: 15px; border: 1px solid #ddd; background: #eee; }
+        .btn-assign { background: #007bff; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .status-badge { padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; background: #ffeaa7; }
     </style>
 </head>
 <body>
-
 <div class="sidebar">
     <h2>Fast8 Admin</h2>
     <hr>
-    <p>Live Orders</p>
-    <p>Product Inventory</p>
-    <p>Rider Payments</p>
+    <p>🚀 Live Dashboard</p>
+    <p>📊 Sales Reports</p>
 </div>
-
 <div class="main">
     <div class="stats-grid">
-        <div class="stat-card"><h3>Total Sales</h3><h2 id="total-sales">₹0</h2></div>
-        <div class="stat-card"><h3>Company Profit</h3><h2 id="profit">₹0</h2></div>
-        <div class="stat-card"><h3>Rider Due</h3><h2 id="rider-due">₹0</h2></div>
+        <div class="stat-card">Total Sales<br><h2 id="sales-val">₹0</h2></div>
+        <div class="stat-card">Company Profit<br><h2 id="profit-val">₹0</h2></div>
+        <div class="stat-card">Rider Payout<br><h2 id="rider-val">₹0</h2></div>
     </div>
 
-    <h3>Live Orders</h3>
-    <div id="order-list">Loading...</div>
+    <h3>Live Orders & Tracking</h3>
+    <div id="order-list">Fetching orders...</div>
 </div>
 
 <script>
@@ -45,30 +46,63 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    const activeMaps = {};
 
     db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
-        let sales = 0, riderDue = 0;
-        const list = document.getElementById('order-list');
-        list.innerHTML = "";
+        const div = document.getElementById('order-list');
+        div.innerHTML = "";
+        let totalSales = 0, totalRider = 0;
 
         snap.forEach(doc => {
             const d = doc.data();
-            sales += parseInt(d.totalAmount || 0);
-            if(d.status !== "Delivered") riderDue += (d.riderEarning || 0);
+            const id = doc.id;
+            
+            // Stats Calculation (Handling undefined)
+            const amount = parseInt(d.totalAmount) || 0;
+            const earning = parseInt(d.riderEarning) || 0;
+            totalSales += amount;
+            totalRider += (d.status === "Delivered" ? earning : 0);
 
-            list.innerHTML += `
-                <div class="order-card">
-                    <b>${d.customerName} (${d.serviceType})</b> - <small>${d.status}</small><br>
-                    Items: ${d.items}<br>
-                    Total: ₹${d.totalAmount} (Rider will get: ₹${d.riderEarning})<br><br>
-                    Assign Rider: <input type="text" id="r-${doc.id}" value="${d.assignedTo || ''}">
-                    <button class="btn-assign" onclick="assign('${doc.id}')">Update</button>
-                </div>`;
+            const orderDiv = document.createElement('div');
+            orderDiv.className = "order-card";
+            orderDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between;">
+                    <strong>👤 ${d.customerName || 'Unknown'}</strong> 
+                    <span class="status-badge">${d.status || 'Pending'}</span>
+                </div>
+                <p style="margin:5px 0;">📦 <b>Service:</b> ${d.serviceType || 'General'}</p>
+                <p style="font-size:14px;">Items: ${d.items || 'N/A'}</p>
+                <div style="background:#f9f9f9; padding:10px; border-radius:8px;">
+                    💰 Bill: ₹${amount} | 🚴 Rider Share: ₹${earning || '15'}
+                </div>
+                <div style="margin-top:10px;">
+                    Assign Rider: <input type="text" id="r-${id}" value="${d.assignedTo || ''}" style="padding:5px; border-radius:4px; border:1px solid #ccc;">
+                    <button class="btn-assign" onclick="assign('${id}')">Update</button>
+                </div>
+                ${d.riderLat ? `<div id="map-${id}" class="map-box"></div>` : '<p style="color:gray; font-size:12px; margin-top:10px;"><i>GPS tracking not started by rider.</i></p>'}
+            `;
+            div.appendChild(orderDiv);
+
+            // Map Initialize logic
+            if(d.riderLat && d.riderLng) {
+                setTimeout(() => {
+                    const pos = [d.riderLat, d.riderLng];
+                    if (!activeMaps[id]) {
+                        activeMaps[id] = L.map(`map-${id}`).setView(pos, 16);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(activeMaps[id]);
+                        activeMaps[id].marker = L.marker(pos).addTo(activeMaps[id]);
+                    } else {
+                        activeMaps[id].marker.setLatLng(pos);
+                        activeMaps[id].setView(pos);
+                    }
+                }, 500);
+            }
         });
 
-        document.getElementById('total-sales').innerText = "₹" + sales;
-        document.getElementById('rider-due').innerText = "₹" + riderDue;
-        document.getElementById('profit').innerText = "₹" + (sales - riderDue);
+        // Update Stats UI
+        document.getElementById('sales-val').innerText = "₹" + totalSales;
+        document.getElementById('rider-val').innerText = "₹" + totalRider;
+        document.getElementById('profit-val').innerText = "₹" + (totalSales - totalRider);
     });
 
     function assign(id) {
