@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fast8 Admin - Premium Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fast8 Bondhu - Order Now</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -16,128 +16,119 @@
             --red: #e63946;
             --yellow: #ffb703;
             --dark: #1d3557;
-            --light: #f8f9fa;
-            --grey: #6c757d;
+            --light: #ffffff;
+            --bg: #f8f9fa;
         }
 
         * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
-        body { background-color: var(--light); color: var(--dark); padding-bottom: 80px; }
+        body { background-color: var(--bg); color: var(--dark); padding-bottom: 100px; }
 
-        /* --- Header & Branding --- */
+        /* --- Zomato Style Header --- */
         header {
+            background: var(--light);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .brand h2 { color: var(--red); font-weight: 800; font-size: 22px; }
+        .location { font-size: 11px; color: var(--red); font-weight: 600; }
+
+        /* --- Category Tabs --- */
+        .category-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 15px 20px;
+            gap: 10px;
+            background: var(--light);
+        }
+        .cat-chip {
+            padding: 8px 18px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 13px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .cat-chip.active { background: var(--red); color: white; border-color: var(--red); font-weight: 600; }
+
+        /* --- Product Grid --- */
+        .product-list { padding: 10px 20px; }
+        .p-card {
+            background: white;
+            border-radius: 18px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            border: 1px solid #f0f0f0;
+        }
+        .p-img { width: 80px; height: 80px; background: #fdf2f2; border-radius: 12px; margin-right: 15px; display: flex; align-items: center; justify-content: center; }
+        .p-img i { font-size: 30px; color: var(--red); }
+        .p-info { flex: 1; }
+        .p-info b { font-size: 15px; display: block; }
+        .p-info small { color: #888; font-size: 12px; }
+        .p-price { font-weight: 700; color: var(--dark); margin-top: 5px; }
+
+        /* --- Add Button --- */
+        .add-box { text-align: right; }
+        .btn-add { 
+            background: white; 
+            color: var(--red); 
+            border: 1px solid var(--red); 
+            padding: 5px 20px; 
+            border-radius: 8px; 
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(230,57,70,0.2);
+        }
+
+        /* --- Floating Cart Bar --- */
+        .cart-bar {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            right: 20px;
             background: var(--red);
             color: white;
-            padding: 20px;
-            text-align: center;
-            border-bottom-left-radius: 25px;
-            border-bottom-right-radius: 25px;
-            box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3);
-        }
-
-        /* --- Stats Grid --- */
-        .stats-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            padding: 20px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 15px;
+            padding: 15px 20px;
             border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border-bottom: 4px solid var(--yellow);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .stat-card i { font-size: 24px; color: var(--red); margin-bottom: 10px; }
-        .stat-card h3 { font-size: 18px; font-weight: 700; }
-        .stat-card p { font-size: 12px; color: var(--grey); }
-
-        /* --- Section Styling --- */
-        .section { padding: 0 20px 20px 20px; }
-        .section-title { 
-            font-size: 18px; 
-            margin-bottom: 15px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-        }
-
-        /* --- Order Cards (Zomato Style) --- */
-        .order-card {
-            background: white;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 15px;
-            border: 1px solid #eee;
-            position: relative;
-        }
-
-        .status-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .pending { background: #fff3cd; color: #856404; }
-        .delivered { background: #d4edda; color: #155724; }
-
-        .btn {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
-            font-size: 13px;
-        }
-
-        .btn-primary { background: var(--red); color: white; width: 100%; margin-top: 10px; }
-        .btn-outline { background: transparent; border: 1px solid var(--red); color: var(--red); }
-
-        /* --- Bottom Navigation --- */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
-        }
-
-        .nav-item { text-align: center; color: var(--grey); text-decoration: none; font-size: 11px; }
-        .nav-item.active { color: var(--red); }
-        .nav-item i { font-size: 20px; display: block; }
-
-        /* --- Modal for Forms --- */
-        .modal {
             display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 2000;
-            padding: 20px;
-            overflow-y: auto;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(230,57,70,0.4);
+            animation: slideUp 0.3s ease-out;
         }
-        
-        .modal-content { background: white; border-radius: 20px; padding: 25px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-size: 13px; margin-bottom: 5px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; }
+        @keyframes slideUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
 
-        /* Hidden class for SPA behavior */
+        /* --- Bottom Nav --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%;
+            background: white; display: flex; justify-content: space-around;
+            padding: 12px 0; border-top: 1px solid #eee; z-index: 1000;
+        }
+        .nav-item { text-align: center; color: #999; font-size: 10px; text-decoration: none; }
+        .nav-item.active { color: var(--red); }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 2px; }
+
+        /* --- Checkout Modal --- */
+        .modal { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: white; z-index: 2001; padding: 20px; overflow-y: auto;
+        }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 12px; margin-bottom: 5px; color: #666; }
+        .input-group input, .input-group textarea { width: 100%; padding: 12px; border: 1px solid #eee; border-radius: 10px; background: #f9f9f9; }
+        .bill-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
+        
         .page-content { display: none; }
         .page-content.active { display: block; }
     </style>
@@ -145,181 +136,212 @@
 <body>
 
 <header>
-    <h2 style="font-weight: 700;">Fast8 Bondhu</h2>
-    <p style="font-size: 12px;">Admin Management System</p>
+    <div class="brand">
+        <span class="location"><i class="fas fa-location-dot"></i> Delivering to you</span>
+        <h2>Fast8 Bondhu</h2>
+    </div>
+    <div class="user-profile"><i class="fas fa-circle-user fa-2x" style="color:#ddd"></i></div>
 </header>
 
-<div id="page-dashboard" class="page-content active">
-    <div class="stats-container">
-        <div class="stat-card">
-            <i class="fas fa-shopping-bag"></i>
-            <h3 id="stat-orders">0</h3>
-            <p>Today Orders</p>
-        </div>
-        <div class="stat-card">
-            <i class="fas fa-wallet"></i>
-            <h3 id="stat-sales">₹0</h3>
-            <p>Total Sales</p>
-        </div>
-        <div class="stat-card">
-            <i class="fas fa-motorcycle"></i>
-            <h3 id="stat-riders">0</h3>
-            <p>Active Riders</p>
-        </div>
-        <div class="stat-card">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3 id="stat-stock">0</h3>
-            <p>Low Stock</p>
+<div id="home-page" class="page-content active">
+    <div style="padding: 10px 20px;">
+        <div style="background:#eee; padding:12px; border-radius:12px; color:#888; font-size:14px;">
+            <i class="fas fa-search"></i> Search vegetables, grocery...
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title">
-            <b>Live Orders</b>
-            <span style="font-size: 12px; color: var(--red);">View All</span>
+    <div class="category-container">
+        <div class="cat-chip active" onclick="filterCat('vegetables', this)">Vegetables</div>
+        <div class="cat-chip" onclick="filterCat('grocery', this)">Grocery</div>
+        <div class="cat-chip" onclick="filterCat('fruit', this)">Fruits</div>
+    </div>
+
+    <div class="product-list" id="p-list">
         </div>
-        <div id="live-orders-list">
-            </div>
+</div>
+
+<div id="orders-page" class="page-content">
+    <div style="padding: 20px;">
+        <h3>My Orders</h3>
+        <div id="my-orders-list"></div>
     </div>
 </div>
 
-<div id="page-inventory" class="page-content">
-    <div class="section" style="padding-top: 20px;">
-        <div class="section-title">
-            <b>Product Stock</b>
-            <button class="btn btn-outline" onclick="openModal('modal-product')">+ Add</button>
-        </div>
-        <div id="product-list">
-            </div>
+<div class="cart-bar" id="cart-bar" onclick="openCheckout()">
+    <div><b id="cart-qty">0 Items</b> | <span id="cart-total">₹0</span></div>
+    <div>View Cart <i class="fas fa-chevron-right"></i></div>
+</div>
+
+<div class="modal" id="checkout-modal">
+    <div style="display:flex; align-items:center; margin-bottom:20px;">
+        <i class="fas fa-arrow-left fa-lg" onclick="closeCheckout()"></i>
+        <h3 style="margin-left:15px;">Checkout</h3>
     </div>
+
+    <div id="checkout-items" style="margin-bottom:20px;"></div>
+
+    <div class="input-group">
+        <label>Delivery Address</label>
+        <textarea id="u-address" rows="3" placeholder="Flat No, Building, Area, Landmark..."></textarea>
+    </div>
+    <div class="input-group">
+        <label>Phone Number</label>
+        <input type="tel" id="u-phone" placeholder="Enter 10 digit mobile">
+    </div>
+
+    <div style="background:#fdf2f2; padding:15px; border-radius:15px; margin-top:20px;">
+        <div class="bill-row"><span>Item Total</span><span id="bill-subtotal">₹0</span></div>
+        <div class="bill-row"><span>Delivery Fee</span><span id="bill-delivery">₹20</span></div>
+        <hr style="margin:10px 0; border:0; border-top:1px dashed #e63946;">
+        <div class="bill-row" style="font-weight:700; font-size:16px;"><span>To Pay</span><span id="bill-grandtotal">₹0</span></div>
+    </div>
+
+    <button onclick="placeOrder()" style="width:100%; background:var(--red); color:white; border:none; padding:18px; border-radius:15px; font-weight:700; font-size:16px; margin-top:20px; box-shadow: 0 5px 15px rgba(230,57,70,0.3);">
+        Place Order (COD)
+    </button>
 </div>
 
 <div class="bottom-nav">
-    <a href="javascript:void(0)" class="nav-item active" onclick="switchPage('dashboard', this)">
-        <i class="fas fa-home"></i>Home
+    <a href="javascript:void(0)" class="nav-item active" onclick="switchPage('home', this)">
+        <i class="fas fa-house"></i>Home
     </a>
-    <a href="javascript:void(0)" class="nav-item" onclick="switchPage('inventory', this)">
-        <i class="fas fa-boxes"></i>Stock
+    <a href="javascript:void(0)" class="nav-item" onclick="switchPage('orders', this)">
+        <i class="fas fa-bag-shopping"></i>Orders
     </a>
-    <a href="javascript:void(0)" class="nav-item" onclick="switchPage('riders', this)">
-        <i class="fas fa-users"></i>Riders
+    <a href="javascript:void(0)" class="nav-item">
+        <i class="fas fa-headset"></i>Support
     </a>
-    <a href="javascript:void(0)" class="nav-item" onclick="switchPage('reports', this)">
-        <i class="fas fa-chart-pie"></i>Reports
-    </a>
-</div>
-
-<div id="modal-product" class="modal">
-    <div class="modal-content">
-        <h3>Add New Product</h3><br>
-        <div class="form-group">
-            <label>Product Name</label>
-            <input type="text" id="p-name" placeholder="e.g. Fresh Tomato">
-        </div>
-        <div class="form-group">
-            <label>Category</label>
-            <select id="p-cat">
-                <option value="vegetables">Vegetables</option>
-                <option value="grocery">Grocery</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Price (₹)</label>
-            <input type="number" id="p-price">
-        </div>
-        <div class="form-group">
-            <label>Unit (kg/pc/pkt)</label>
-            <input type="text" id="p-unit">
-        </div>
-        <div class="form-group">
-            <label>Initial Stock</label>
-            <input type="number" id="p-stock">
-        </div>
-        <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
-        <button class="btn btn-outline" style="width:100%; margin-top:10px;" onclick="closeModal('modal-product')">Cancel</button>
-    </div>
 </div>
 
 <script>
-    // --- FIREBASE INITIALIZATION ---
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "fast8delivery-a90b4.firebaseapp.com",
         projectId: "fast8delivery-a90b4",
-        storageBucket: "fast8delivery-a90b4.appspot.com",
-        messagingSenderId: "200027434311",
         appId: "1:200027434311:web:9bc6caf3db527b602c3062"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- NAVIGATION LOGIC ---
-    function switchPage(pageId, el) {
-        document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.getElementById('page-' + pageId).classList.add('active');
-        el.classList.add('active');
-    }
+    let cart = {};
+    let allProducts = [];
 
-    function openModal(id) { document.getElementById(id).style.display = 'block'; }
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-    // --- PRODUCT MANAGEMENT ---
-    function saveProduct() {
-        const product = {
-            name: document.getElementById('p-name').value,
-            category: document.getElementById('p-cat').value,
-            price: Number(document.getElementById('p-price').value),
-            unit: document.getElementById('p-unit').value,
-            stock: Number(document.getElementById('p-stock').value),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        db.collection("products").add(product).then(() => {
-            alert("Product added successfully!");
-            closeModal('modal-product');
-        });
-    }
-
-    // --- REALTIME LISTENERS ---
-    function initDashboard() {
-        // Listen for Orders
-        db.collection("orders").onSnapshot(snap => {
-            const list = document.getElementById('live-orders-list');
-            let sales = 0;
+    // --- LOAD PRODUCTS ---
+    function fetchProducts(cat = 'vegetables') {
+        db.collection("products").where("category", "==", cat).onSnapshot(snap => {
+            const list = document.getElementById('p-list');
             list.innerHTML = "";
-            
+            allProducts = [];
             snap.forEach(doc => {
-                const order = doc.data();
-                sales += order.totalAmount || 0;
+                const p = doc.data();
+                p.id = doc.id;
+                allProducts.push(p);
                 list.innerHTML += `
-                    <div class="order-card">
-                        <span class="status-badge ${order.status.toLowerCase()}">${order.status}</span>
-                        <b>#${doc.id.substring(0,6)} - ${order.customerName}</b>
-                        <p style="font-size:12px; margin:5px 0;">Items: ${order.items}</p>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-weight:700; color:var(--red);">₹${order.totalAmount}</span>
-                            <button class="btn btn-outline" onclick="generateInvoice('${doc.id}')">Invoice</button>
+                    <div class="p-card">
+                        <div class="p-img"><i class="fas fa-leaf"></i></div>
+                        <div class="p-info">
+                            <b>${p.name}</b>
+                            <small>${p.unit}</small>
+                            <div class="p-price">₹${p.price}</div>
+                        </div>
+                        <div class="add-box">
+                            <button class="btn-add" onclick="addToCart('${p.id}')">ADD</button>
                         </div>
                     </div>
                 `;
             });
-            document.getElementById('stat-orders').innerText = snap.size;
-            document.getElementById('stat-sales').innerText = "₹" + sales;
-        });
-
-        // Listen for Products (Stock Alerts)
-        db.collection("products").onSnapshot(snap => {
-            let lowStockCount = 0;
-            snap.forEach(doc => {
-                if(doc.data().stock < 5) lowStockCount++;
-            });
-            document.getElementById('stat-stock').innerText = lowStockCount;
         });
     }
 
-    // Initialize logic
-    initDashboard();
+    // --- CART LOGIC ---
+    function addToCart(id) {
+        const prod = allProducts.find(x => x.id === id);
+        if(!cart[id]) cart[id] = { ...prod, qty: 1 };
+        else cart[id].qty++;
+        updateCartUI();
+    }
+
+    function updateCartUI() {
+        let total = 0, count = 0;
+        for(let key in cart) {
+            count += cart[key].qty;
+            total += cart[key].price * cart[key].qty;
+        }
+        
+        const bar = document.getElementById('cart-bar');
+        if(count > 0) {
+            bar.style.display = 'flex';
+            document.getElementById('cart-qty').innerText = count + " Items";
+            document.getElementById('cart-total').innerText = "₹" + total;
+        } else {
+            bar.style.display = 'none';
+        }
+    }
+
+    // --- PAGE & MODAL LOGIC ---
+    function switchPage(p, el) {
+        document.querySelectorAll('.page-content').forEach(x => x.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+        document.getElementById(p + '-page').classList.add('active');
+        el.classList.add('active');
+    }
+
+    function openCheckout() {
+        document.getElementById('checkout-modal').style.display = 'block';
+        let subtotal = 0;
+        let itemsHtml = "";
+        for(let key in cart) {
+            let item = cart[key];
+            subtotal += item.price * item.qty;
+            itemsHtml += `<div class="bill-row"><span>${item.name} x ${item.qty}</span><b>₹${item.price * item.qty}</b></div>`;
+        }
+        document.getElementById('checkout-items').innerHTML = itemsHtml;
+        document.getElementById('bill-subtotal').innerText = "₹" + subtotal;
+        document.getElementById('bill-grandtotal').innerText = "₹" + (subtotal + 20);
+    }
+
+    function closeCheckout() { document.getElementById('checkout-modal').style.display = 'none'; }
+
+    function filterCat(cat, el) {
+        document.querySelectorAll('.cat-chip').forEach(x => x.classList.remove('active'));
+        el.classList.add('active');
+        fetchProducts(cat);
+    }
+
+    // --- ORDER PLACEMENT ---
+    function placeOrder() {
+        const addr = document.getElementById('u-address').value;
+        const phone = document.getElementById('u-phone').value;
+        if(!addr || !phone) return alert("Please fill address and phone!");
+
+        let itemStr = "";
+        let total = 0;
+        for(let key in cart) {
+            itemStr += `${cart[key].name} (${cart[key].qty}), `;
+            total += cart[key].price * cart[key].qty;
+        }
+
+        const orderData = {
+            customerName: "User", // Can be replaced with Auth name later
+            customerPhone: phone,
+            customerAddress: addr,
+            items: itemStr,
+            totalAmount: total + 20,
+            status: "Pending",
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        db.collection("orders").add(orderData).then(() => {
+            alert("Order Placed Successfully! 🚀");
+            cart = {};
+            updateCartUI();
+            closeCheckout();
+        });
+    }
+
+    // Start App
+    fetchProducts();
 
 </script>
 </body>
