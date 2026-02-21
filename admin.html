@@ -24,25 +24,25 @@
 </div>
 <div class="main">
     <div class="stat-box">
-        <div class="stat">Sales<br><h2 id="sales">₹0</h2></div>
-        <div class="stat">Profit<br><h2 id="profit">₹0</h2></div>
-        <div class="stat">Orders<br><h2 id="count">0</h2></div>
-    </div>
-
-    <div class="card">
-        <h3>Add Product</h3>
-        <input type="text" id="pName" placeholder="Name">
-        <input type="number" id="pPrice" placeholder="Price">
-        <select id="pCat"><option value="Grocery">Grocery</option><option value="Tiffin">Tiffin</option></select>
-        <button onclick="addProduct()" style="background:green; color:white; padding:10px; border:none; border-radius:5px;">Add Item</button>
+        <div class="stat">Total Sales<br><h2 id="sales">₹0</h2></div>
+        <div class="stat">Company Profit<br><h2 id="profit">₹0</h2></div>
+        <div class="stat">Active Orders<br><h2 id="count">0</h2></div>
     </div>
 
     <div class="card">
         <h3>Live Orders</h3>
         <table>
-            <thead><tr><th>Customer</th><th>Items</th><th>Bill</th><th>Status</th><th>Rider</th><th>Action</th></tr></thead>
+            <thead><tr><th>Customer</th><th>Items</th><th>Bill</th><th>Rider Get</th><th>Status</th><th>Assign Rider</th><th>Action</th></tr></thead>
             <tbody id="order-body"></tbody>
         </table>
+    </div>
+
+    <div class="card">
+        <h3>Add Product Inventory</h3>
+        <input type="text" id="pName" placeholder="Product Name">
+        <input type="number" id="pPrice" placeholder="Price">
+        <select id="pCat"><option value="Grocery">Grocery</option><option value="Tiffin">Tiffin</option></select>
+        <button onclick="addProduct()" style="background:green; color:white; padding:10px; border:none; border-radius:5px;">Add Item</button>
     </div>
 </div>
 
@@ -60,28 +60,35 @@
         const name = document.getElementById('pName').value;
         const price = parseInt(document.getElementById('pPrice').value);
         const cat = document.getElementById('pCat').value;
-        db.collection("products").add({ name, price, category: cat }).then(() => alert("Added!"));
+        db.collection("products").add({ name, price, category: cat }).then(() => alert("Added to Shop!"));
     }
 
-    db.collection("orders").onSnapshot(snap => {
+    db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
         const body = document.getElementById('order-body');
         let sales = 0, count = 0;
         body.innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
-            sales += d.totalAmount; count++;
+            sales += (d.totalAmount || 0); 
+            count++;
+            const riderPay = d.riderEarning || 30;
+            
             body.innerHTML += `<tr>
                 <td>${d.customerName}<br><small>${d.customerPhone}</small></td>
                 <td>${d.items}</td>
                 <td>₹${d.totalAmount}</td>
-                <td>${d.status}</td>
-                <td><input type="text" id="r-${doc.id}" placeholder="Assign" value="${d.assignedTo || ''}"><button onclick="assign('${doc.id}')">OK</button></td>
-                <td><button onclick="db.collection('orders').doc('${doc.id}').delete()">Del</button></td>
+                <td>₹${riderPay}</td>
+                <td style="color:orange; font-weight:bold;">${d.status}</td>
+                <td>
+                    <input type="text" id="r-${doc.id}" style="width:80px" value="${d.assignedTo || ''}">
+                    <button onclick="assign('${doc.id}')">Update</button>
+                </td>
+                <td><button onclick="if(confirm('Delete?')) db.collection('orders').doc('${doc.id}').delete()" style="color:red;">❌</button></td>
             </tr>`;
         });
-        document.getElementById('sales').innerText = "₹"+sales;
+        document.getElementById('sales').innerText = "₹" + sales;
         document.getElementById('count').innerText = count;
-        document.getElementById('profit').innerText = "₹"+(sales * 0.2).toFixed(0); // 20% rough profit
+        document.getElementById('profit').innerText = "₹" + (sales * 0.15).toFixed(0); // 15% calculation
     });
 
     function assign(id) {
