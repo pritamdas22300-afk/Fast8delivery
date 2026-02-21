@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast8 - Secure Delivery</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --primary: #e63946; --accent: #ffb703; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
+        header { background: var(--primary); color: white; padding: 15px; text-align: center; }
+        .container { padding: 15px; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .tab-btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; background: #eee; }
+        .active { background: var(--accent); font-weight: bold; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 100; overflow-y: auto; }
+        .modal-content { background: white; margin: 10% auto; padding: 20px; width: 85%; border-radius: 15px; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .status-tracker { background: #333; color: #fff; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<header><h2>Fast8 Bondhu 🚀</h2></header>
+
+<div class="container">
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+        <button id="shop-tab" class="tab-btn active" onclick="showTab('shop')">Shop</button>
+        <button id="track-tab" class="tab-btn" onclick="showTab('track')">Track Order</button>
+    </div>
+
+    <div id="shop-section">
+        <div id="product-list">Loading products...</div>
+    </div>
+
+    <div id="track-section" style="display:none;">
+        <h3>My Recent Orders</h3>
+        <input type="tel" id="trackPhone" placeholder="Enter Registered Phone to Track">
+        <button onclick="trackMyOrders()" style="width:100%; padding:10px; background:var(--primary); color:#fff; border:none; border-radius:8px;">Search Orders</button>
+        <div id="my-orders" style="margin-top:15px;"></div>
+    </div>
+</div>
+
+<div id="cart-bar" style="position:fixed; bottom:20px; left:15px; right:15px; background:#333; color:#fff; padding:15px; border-radius:12px; display:none; justify-content:space-between; align-items:center;">
+    <span id="cart-info">0 Items</span>
+    <button onclick="openCheckout()" style="background:var(--accent); border:none; padding:10px 20px; border-radius:8px; font-weight:bold;">Checkout</button>
+</div>
+
+<div class="modal" id="checkout-modal">
+    <div class="modal-content">
+        <h3>Order Details</h3>
+        <button onclick="getLocation()" id="loc-btn" style="width:100%; padding:12px; margin-bottom:10px; background:#007bff; color:#fff; border:none; border-radius:8px;">📍 Share Live Location</button>
+        <input type="text" id="custName" placeholder="Full Name">
+        <input type="tel" id="custPhone" placeholder="Phone Number">
+        <input type="text" id="custAddr" placeholder="Address Details">
+        <input type="number" id="dist" placeholder="Distance in KM" oninput="calcTotal()">
+        <p>Total: ₹<span id="final-total">0</span></p>
+        <button onclick="placeOrder()" style="width:100%; padding:15px; background:var(--primary); color:#fff; border:none; border-radius:8px;">Confirm Order</button>
+        <button onclick="closeCheckout()" style="width:100%; background:none; border:none; margin-top:10px; color:gray;">Close</button>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
+        authDomain: "fast8delivery-a90b4.firebaseapp.com",
+        projectId: "fast8delivery-a90b4",
+        appId: "1:200027434311:web:9bc6caf3db527b602c3062"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let products = [], cart = {}, userLoc = null;
+
+    function showTab(tab) {
+        document.getElementById('shop-section').style.display = tab === 'shop' ? 'block' : 'none';
+        document.getElementById('track-section').style.display = tab === 'track' ? 'block' : 'none';
+        document.getElementById('shop-tab').classList.toggle('active', tab === 'shop');
+        document.getElementById('track-tab').classList.toggle('active', tab === 'track');
+    }
+
+    // Load Products
+    db.collection("products").onSnapshot(snap => {
+        products = [];
+        const list = document.getElementById('product-list');
+        list.innerHTML = "";
+        snap.forEach(doc => {
+            let p = {id: doc.id, ...doc.data()};
+            products.push(p);
+            list.innerHTML += `
+                <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><b>${p.name}</b><br>₹${p.price}/${p.unit}</div>
+                    <div>
+                        <button onclick="updateCart('${p.id}', -1)">-</button>
+                        <span id="q-${p.id}">${cart[p.id] || 0}</span>
+                        <button onclick="updateCart('${p.id}', 1)">+</button>
+                    </div>
+                </div>`;
+        });
+    });
+
+    function updateCart(id, ch) {
+        cart[id] = (cart[id] || 0) + ch;
+        if(cart[id] < 0) cart[id] = 0;
+        document.getElementById(`q-${id}`).innerText = cart[id];
+        let total = 0, count = 0;
+        products.forEach(p => { if(cart[p.id]) { total += p.price * cart[p.id]; count += cart[p.id]; }});
+        document.getElementById('cart-bar').style.display = count > 0 ? 'flex' : 'none';
+        document.getElementById('cart-info').innerText = `${count} Items | ₹${total}`;
+    }
+
+    function getLocation() {
+        if (!navigator.geolocation) return alert("GPS not supported");
+        document.getElementById('loc-btn').innerText = "Trying to find you...";
+        navigator.geolocation.getCurrentPosition(pos => {
+            userLoc = {lat: pos.coords.latitude, lng: pos.coords.longitude};
+            document.getElementById('loc-btn').innerText = "Location Linked ✅";
+            document.getElementById('loc-btn').style.background = "#28a745";
+        }, (err) => {
+            alert("Error: Please enable Location Permission in Browser Settings.");
+            document.getElementById('loc-btn').innerText = "📍 Click again to retry";
+        }, {enableHighAccuracy: true});
+    }
+
+    function openCheckout() { document.getElementById('checkout-modal').style.display = 'block'; }
+    function closeCheckout() { document.getElementById('checkout-modal').style.display = 'none'; }
+    function calcTotal() {
+        let t = parseInt(document.getElementById('cart-info').innerText.split('₹')[1]);
+        let d = parseFloat(document.getElementById('dist').value) || 0;
+        document.getElementById('final-total').innerText = t + (d <= 2 ? 30 : 30 + (d-2)*10);
+    }
+
+    function placeOrder() {
+        const name = document.getElementById('custName').value;
+        const phone = document.getElementById('custPhone').value;
+        if(!name || !phone) return alert("Name/Phone empty!");
+        
+        let items = "";
+        products.forEach(p => { if(cart[p.id]) items += `${p.name}(${cart[p.id]}), `; });
+
+        db.collection("orders").add({
+            customerName: name, customerPhone: phone, customerAddress: document.getElementById('custAddr').value,
+            items: items, totalAmount: document.getElementById('final-total').innerText,
+            lat: userLoc ? userLoc.lat : null, lng: userLoc ? userLoc.lng : null,
+            status: "Pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => { alert("Order Sent!"); location.reload(); });
+    }
+
+    function trackMyOrders() {
+        const phone = document.getElementById('trackPhone').value;
+        db.collection("orders").where("customerPhone", "==", phone).orderBy("timestamp", "desc").onSnapshot(snap => {
+            const list = document.getElementById('my-orders');
+            list.innerHTML = "";
+            snap.forEach(doc => {
+                const d = doc.data();
+                list.innerHTML += `
+                    <div class="card">
+                        <b>Status: ${d.status}</b><br>
+                        Items: ${d.items}<br>
+                        Total: ₹${d.totalAmount}<br>
+                        ${d.status === 'Out for Delivery' ? '<div class="status-tracker">🚚 Rider is on the way!</div>' : ''}
+                    </div>`;
+            });
+        });
+    }
+</script>
+</body>
+</html>
