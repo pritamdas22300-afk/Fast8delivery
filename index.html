@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fast8 - Local Shopping & Delivery</title>
+    <title>Fast8 - Shopping & Live Tracking</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -12,73 +12,75 @@
         body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; margin: 0; padding-bottom: 90px; }
         header { background: var(--primary); color: white; padding: 20px; text-align: center; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         
-        /* Tabs */
+        /* Navigation Tabs */
         .tabs { display: flex; overflow-x: auto; padding: 15px; gap: 10px; position: sticky; top: 0; background: #f8f9fa; z-index: 100; }
         .tab { background: white; padding: 10px 20px; border-radius: 20px; border: 1px solid #ddd; white-space: nowrap; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .tab.active { background: var(--primary); color: white; border: none; }
 
-        /* Grid & Cards */
-        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
+        /* Content Sections */
+        .section { display: none; padding: 15px; }
+        .section.active { display: block; }
+
+        /* Product Cards */
+        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .p-card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: center; border: 1px solid #f0f0f0; }
         .p-price { color: var(--primary); font-weight: bold; font-size: 18px; margin: 8px 0; }
         .add-btn { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 10px; width: 100%; cursor: pointer; font-weight: bold; }
 
-        /* Floating Cart Bar */
-        .cart-bar { position: fixed; bottom: 20px; left: 15px; right: 15px; background: var(--dark); color: white; padding: 15px 20px; border-radius: 15px; display: none; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 8px 20px rgba(0,0,0,0.3); animation: slideUp 0.4s; }
-        @keyframes slideUp { from { bottom: -100px; } to { bottom: 20px; } }
+        /* Tracking UI */
+        .track-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid var(--accent); }
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
 
-        /* Full Screen Checkout Modal */
+        /* Floating Cart Bar */
+        .cart-bar { position: fixed; bottom: 20px; left: 15px; right: 15px; background: var(--dark); color: white; padding: 15px 20px; border-radius: 15px; display: none; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+
+        /* Modal */
         #cart-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .close-modal { font-size: 24px; cursor: pointer; color: var(--primary); margin-bottom: 20px; display: block; }
-        .cart-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #eee; }
         .checkout-input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; }
-        
-        .wa-btn { position: fixed; bottom: 100px; right: 20px; background: #25d366; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; justify-content: center; align-items: center; text-decoration: none; font-size: 28px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 999; }
     </style>
 </head>
 <body>
 
 <header>
     <h2 style="margin:0;">Fast8 Delivery 🚀</h2>
-    <p style="font-size: 12px; opacity: 0.9;">Fresh Grocery & Daily Tiffin</p>
+    <p style="font-size: 12px; opacity: 0.9;">Fresh Grocery & Tracking</p>
 </header>
 
 <div class="tabs">
-    <div class="tab active" onclick="loadProducts('Grocery', this)">🍎 Grocery</div>
-    <div class="tab" onclick="loadProducts('Tiffin', this)">🍱 Daily Tiffin</div>
-    <div class="tab" onclick="alert('Parcel service coming soon!')">📦 Parcel</div>
+    <div class="tab active" onclick="showSection('shop', this)">🍎 Shop</div>
+    <div class="tab" onclick="showSection('track', this)">📍 Track Order</div>
 </div>
 
-<div id="product-list" class="product-grid"></div>
+<div id="shop-section" class="section active">
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button class="tab" onclick="loadProducts('Grocery')">Grocery</button>
+        <button class="tab" onclick="loadProducts('Tiffin')">Tiffin</button>
+    </div>
+    <div id="product-list" class="product-grid"></div>
+</div>
+
+<div id="track-section" class="section">
+    <h3>Order Status</h3>
+    <input type="tel" id="trackPhone" class="checkout-input" placeholder="Enter Registered Mobile Number">
+    <button class="add-btn" onclick="trackMyOrders()">Find My Orders</button>
+    <div id="my-orders-list" style="margin-top: 20px;"></div>
+</div>
 
 <div class="cart-bar" id="cart-bar">
-    <div>
-        <b id="cart-count">0 Items</b> | <span id="cart-total">₹0</span>
-    </div>
-    <button onclick="toggleModal(true)" style="background:var(--accent); border:none; padding:10px 20px; border-radius:10px; font-weight:bold; cursor:pointer;">View Cart <i class="fas fa-shopping-basket"></i></button>
+    <div id="cart-info">0 Items | ₹0</div>
+    <button onclick="toggleModal(true)" style="background:var(--accent); border:none; padding:10px 20px; border-radius:10px; font-weight:bold;">View Cart</button>
 </div>
 
 <div id="cart-modal">
-    <span class="close-modal" onclick="toggleModal(false)"><i class="fas fa-arrow-left"></i> Back to Shop</span>
-    <h2>Your Basket 🛒</h2>
-    <div id="cart-items-list"></div>
-    
-    <div style="margin-top: 20px; background: #f8f9fa; padding: 15px; border-radius: 12px;">
-        <h3>Delivery Details</h3>
-        <input type="text" id="custName" class="checkout-input" placeholder="Your Full Name">
-        <input type="tel" id="custPhone" class="checkout-input" placeholder="Mobile Number">
-        <textarea id="custAddr" class="checkout-input" placeholder="Full Delivery Address" rows="3"></textarea>
-        
-        <div style="display:flex; justify-content: space-between; font-size: 20px; font-weight: bold; margin: 20px 0;">
-            <span>Total Bill:</span>
-            <span id="final-price">₹0</span>
-        </div>
-        
-        <button class="add-btn" style="padding: 18px; font-size: 18px;" onclick="placeOrder()">Confirm Order (COD)</button>
-    </div>
+    <span onclick="toggleModal(false)" style="cursor:pointer; color:var(--primary);"><i class="fas fa-arrow-left"></i> Back</span>
+    <h2>Checkout</h2>
+    <div id="cart-items-preview"></div>
+    <input type="text" id="custName" class="checkout-input" placeholder="Name">
+    <input type="tel" id="custPhone" class="checkout-input" placeholder="Phone">
+    <textarea id="custAddr" class="checkout-input" placeholder="Full Address"></textarea>
+    <h3 id="final-bill">Total: ₹0</h3>
+    <button class="add-btn" onclick="placeOrder()">Place Order (COD)</button>
 </div>
-
-<a href="https://wa.me/91XXXXXXXXXX" class="wa-btn"><i class="fab fa-whatsapp"></i></a>
 
 <script>
     const firebaseConfig = {
@@ -90,25 +92,26 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let cart = {}; // { productId: { name, price, qty } }
-    let allProducts = {};
+    let cart = {}, allProducts = {};
 
-    // Load Products from Firebase
-    function loadProducts(cat, el) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    function showSection(id, el) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(id + '-section').classList.add('active');
         el.classList.add('active');
-        
+    }
+
+    function loadProducts(cat) {
         db.collection("products").where("category", "==", cat).onSnapshot(snap => {
             const list = document.getElementById('product-list');
             list.innerHTML = "";
             snap.forEach(doc => {
                 const p = doc.data();
-                allProducts[doc.id] = { ...p, id: doc.id };
+                allProducts[doc.id] = p;
                 list.innerHTML += `
                     <div class="p-card">
-                        <div style="height:70px; background:#f0f0f0; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; color:#ccc;"><i class="fas fa-image fa-2x"></i></div>
                         <b>${p.name}</b>
-                        <div class="p-price">₹${p.price} <small>/ ${p.unit}</small></div>
+                        <div class="p-price">₹${p.price}</div>
                         <button class="add-btn" onclick="addToCart('${doc.id}')">Add +</button>
                     </div>`;
             });
@@ -116,81 +119,67 @@
     }
 
     function addToCart(id) {
-        const p = allProducts[id];
-        if (cart[id]) {
-            cart[id].qty += 1;
-        } else {
-            cart[id] = { name: p.name, price: p.price, qty: 1 };
-        }
+        cart[id] = (cart[id] || 0) + 1;
         updateCartUI();
     }
 
     function updateCartUI() {
         let total = 0, count = 0;
-        for (let id in cart) {
-            count += cart[id].qty;
-            total += cart[id].price * cart[id].qty;
+        for(let id in cart) {
+            count += cart[id];
+            total += allProducts[id].price * cart[id];
         }
-
-        if (count > 0) {
-            document.getElementById('cart-bar').style.display = 'flex';
-            document.getElementById('cart-count').innerText = count + " Items";
-            document.getElementById('cart-total').innerText = "₹" + total;
-            document.getElementById('final-price').innerText = "₹" + total;
-        } else {
-            document.getElementById('cart-bar').style.display = 'none';
-        }
+        document.getElementById('cart-bar').style.display = count > 0 ? 'flex' : 'none';
+        document.getElementById('cart-info').innerText = `${count} Items | ₹${total}`;
+        document.getElementById('final-bill').innerText = `Total: ₹${total}`;
     }
 
-    function toggleModal(show) {
-        const modal = document.getElementById('cart-modal');
-        modal.style.display = show ? 'block' : 'none';
+    function trackMyOrders() {
+        const phone = document.getElementById('trackPhone').value;
+        if(!phone) return alert("Enter Phone Number");
         
-        if (show) {
-            const list = document.getElementById('cart-items-list');
+        db.collection("orders").where("customerPhone", "==", phone).orderBy("timestamp", "desc").onSnapshot(snap => {
+            const list = document.getElementById('my-orders-list');
             list.innerHTML = "";
-            for (let id in cart) {
+            snap.forEach(doc => {
+                const d = doc.data();
                 list.innerHTML += `
-                    <div class="cart-item">
-                        <div><b>${cart[id].name}</b><br><small>₹${cart[id].price} x ${cart[id].qty}</small></div>
-                        <div style="font-weight:bold;">₹${cart[id].price * cart[id].qty}</div>
+                    <div class="track-card">
+                        <b>Order Status: <span class="status-badge" style="background:#ffeaa7;">${d.status}</span></b><br>
+                        <small>Items: ${d.items}</small><br>
+                        <b>Total: ₹${d.totalAmount}</b>
+                        ${d.status === 'Out for Delivery' ? '<p style="color:green; font-size:12px;">🚚 Rider is on the way!</p>' : ''}
                     </div>`;
-            }
-        }
+            });
+        });
     }
+
+    function toggleModal(show) { document.getElementById('cart-modal').style.display = show ? 'block' : 'none'; }
 
     function placeOrder() {
         const name = document.getElementById('custName').value;
         const phone = document.getElementById('custPhone').value;
         const addr = document.getElementById('custAddr').value;
-        
-        if(!name || !phone || !addr) return alert("Please fill delivery details!");
+        if(!name || !phone || !addr) return alert("Fill all details");
 
-        let itemsSummary = "";
+        let items = "";
         let bill = 0;
         for(let id in cart) {
-            itemsSummary += `${cart[id].name} (${cart[id].qty}), `;
-            bill += cart[id].price * cart[id].qty;
+            items += `${allProducts[id].name} (${cart[id]}), `;
+            bill += allProducts[id].price * cart[id];
         }
 
         db.collection("orders").add({
-            customerName: name,
-            customerPhone: phone,
-            customerAddress: addr,
-            items: itemsSummary,
-            totalAmount: bill,
-            status: "Pending",
-            riderEarning: 15, // Default commission
+            customerName: name, customerPhone: phone, customerAddress: addr,
+            items: items, totalAmount: bill, status: "Pending",
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
-            alert("Order Placed Successfully! 🚀");
-            cart = {};
-            updateCartUI();
-            toggleModal(false);
+            alert("Order Sent!");
+            cart = {}; updateCartUI(); toggleModal(false);
         });
     }
 
-    loadProducts('Grocery', document.querySelector('.tab'));
+    loadProducts('Grocery');
 </script>
 </body>
 </html>
