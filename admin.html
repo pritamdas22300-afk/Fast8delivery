@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fast8 Admin Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; margin: 0; display: flex; background: #f4f7f6; }
+        .sidebar { width: 250px; background: #2c3e50; color: white; height: 100vh; padding: 20px; position: fixed; }
+        .main { margin-left: 290px; padding: 20px; width: 100%; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center; }
+        .order-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 8px solid #e63946; }
+        .btn-assign { background: #3498db; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>Fast8 Admin</h2>
+    <hr>
+    <p>Live Orders</p>
+    <p>Product Inventory</p>
+    <p>Rider Payments</p>
+</div>
+
+<div class="main">
+    <div class="stats-grid">
+        <div class="stat-card"><h3>Total Sales</h3><h2 id="total-sales">₹0</h2></div>
+        <div class="stat-card"><h3>Company Profit</h3><h2 id="profit">₹0</h2></div>
+        <div class="stat-card"><h3>Rider Due</h3><h2 id="rider-due">₹0</h2></div>
+    </div>
+
+    <h3>Live Orders</h3>
+    <div id="order-list">Loading...</div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
+        authDomain: "fast8delivery-a90b4.firebaseapp.com",
+        projectId: "fast8delivery-a90b4",
+        appId: "1:200027434311:web:9bc6caf3db527b602c3062"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
+        let sales = 0, riderDue = 0;
+        const list = document.getElementById('order-list');
+        list.innerHTML = "";
+
+        snap.forEach(doc => {
+            const d = doc.data();
+            sales += parseInt(d.totalAmount || 0);
+            if(d.status !== "Delivered") riderDue += (d.riderEarning || 0);
+
+            list.innerHTML += `
+                <div class="order-card">
+                    <b>${d.customerName} (${d.serviceType})</b> - <small>${d.status}</small><br>
+                    Items: ${d.items}<br>
+                    Total: ₹${d.totalAmount} (Rider will get: ₹${d.riderEarning})<br><br>
+                    Assign Rider: <input type="text" id="r-${doc.id}" value="${d.assignedTo || ''}">
+                    <button class="btn-assign" onclick="assign('${doc.id}')">Update</button>
+                </div>`;
+        });
+
+        document.getElementById('total-sales').innerText = "₹" + sales;
+        document.getElementById('rider-due').innerText = "₹" + riderDue;
+        document.getElementById('profit').innerText = "₹" + (sales - riderDue);
+    });
+
+    function assign(id) {
+        const r = document.getElementById(`r-${id}`).value;
+        db.collection("orders").doc(id).update({assignedTo: r, status: "Assigned"});
+    }
+</script>
+</body>
+</html>
