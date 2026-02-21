@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast8 Rider Panel - Track & Earn</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --dark: #2d3436; --gold: #ffb703; --green: #2ecc71; --red: #e63946; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f1f2f6; margin: 0; padding-bottom: 30px; }
+        header { background: var(--dark); color: white; padding: 20px; text-align: center; border-bottom: 4px solid var(--gold); }
+        .container { padding: 15px; }
+        
+        /* Rider Stats Card */
+        .stats-card { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 20px; border-left: 5px solid var(--gold); }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .stat-box { background: #f9f9f9; padding: 10px; border-radius: 8px; text-align: center; }
+        .target-bar { height: 10px; background: #eee; border-radius: 5px; margin-top: 10px; overflow: hidden; }
+        .progress { height: 100%; background: var(--green); width: 0%; transition: 0.5s; }
+
+        /* Task Card */
+        .task-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
+        .service-badge { position: absolute; top: 10px; right: 10px; background: #eee; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 15px; }
+        .btn-start { background: var(--gold); color: black; }
+        .btn-done { background: var(--green); color: white; }
+        
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2 style="margin:0;">Fast8 Rider Panel</h2>
+    <p style="margin:5px 0 0; opacity:0.8;">Deliver More, Earn More!</p>
+</header>
+
+<div class="container">
+    <div id="login-section">
+        <input type="text" id="riderName" placeholder="Enter Your Full Name">
+        <button class="btn btn-start" onclick="loadRiderDashboard()">Enter My Dashboard</button>
+    </div>
+
+    <div id="dashboard-section" style="display:none;">
+        <div class="stats-card">
+            <h3 style="margin:0;">Hello, <span id="display-name">Rider</span>! 👋</h3>
+            <div class="stats-grid">
+                <div class="stat-box">Total Earnings<br><b id="total-earn">₹0</b></div>
+                <div class="stat-box">Orders Done<br><b id="total-orders">0</b></div>
+            </div>
+            <p style="font-size:13px; margin: 15px 0 5px;">Weekly Target: <span id="order-count">0</span>/50 Orders</p>
+            <div class="target-bar"><div class="progress" id="progress-bar"></div></div>
+            <small style="color:gray;">Complete 50 orders for Weekly Bonus!</small>
+        </div>
+
+        <h3>📦 Active Tasks</h3>
+        <div id="task-list">Looking for tasks...</div>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
+        authDomain: "fast8delivery-a90b4.firebaseapp.com",
+        projectId: "fast8delivery-a90b4",
+        appId: "1:200027434311:web:9bc6caf3db527b602c3062"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    let riderName = "";
+    let watchId = null;
+
+    function loadRiderDashboard() {
+        riderName = document.getElementById('riderName').value.trim();
+        if(!riderName) return alert("Enter your name first!");
+        
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('dashboard-section').style.display = 'block';
+        document.getElementById('display-name').innerText = riderName;
+
+        // Fetch Rider Stats
+        db.collection("orders")
+        .where("assignedTo", "==", riderName)
+        .where("status", "==", "Delivered")
+        .onSnapshot(snap => {
+            let totalIncome = 0;
+            let count = snap.size;
+            snap.forEach(doc => {
+                totalIncome += (doc.data().riderEarning || 0);
+            });
+            document.getElementById('total-earn').innerText = "₹" + totalIncome;
+            document.getElementById('total-orders').innerText = count;
+            document.getElementById('order-count').innerText = count;
+            
+            // Progress Bar Logic (Target 50)
+            let percent = (count / 50) * 100;
+            document.getElementById('progress-bar').style.width = (percent > 100 ? 100 : percent) + "%";
+        });
+
+        // Fetch Pending Tasks
+        db.collection("orders")
+        .where("assignedTo", "==", riderName)
+        .where("status", "in", ["Assigned", "Out for Delivery"])
+        .onSnapshot(snap => {
+            const list = document.getElementById('task-list');
+            list.innerHTML = "";
+            if(snap.empty) list.innerHTML = "<p style='color:gray;'>No active tasks. Take a rest!</p>";
+            
+            snap.forEach(doc => {
+                const d = doc.data();
+                list.innerHTML += `
+                    <div class="task-card">
+                        <span class="service-badge">${d.serviceType || 'Delivery'}</span>
+                        <b>👤 ${d.customerName}</b><br>
+                        <small>📞 ${d.customerPhone}</small><br>
+                        <p style="font-size:14px; margin:10px 0;">📍 <b>Address:</b> ${d.customerAddress}</p>
+                        <hr>
+                        <p style="margin:5px 0; color:var(--green); font-weight:bold;">Your Earning: ₹${d.riderEarning || 15}</p>
+                        <button class="btn btn-start" id="track-${doc.id}" onclick="startGPS('${doc.id}')">
+                            ${d.status === "Out for Delivery" ? "📡 GPS Tracking ON" : "🚚 Start Delivery"}
+                        </button>
+                        <button class="btn btn-done" onclick="finishOrder('${doc.id}')">✅ Mark Delivered</button>
+                    </div>`;
+            });
+        });
+    }
+
+    function startGPS(orderId) {
+        if (navigator.geolocation) {
+            alert("Live Tracking Started! Please don't lock your phone.");
+            document.getElementById(`track-${orderId}`).innerText = "📡 GPS Tracking ON";
+            
+            watchId = navigator.geolocation.watchPosition(pos => {
+                db.collection("orders").doc(orderId).update({
+                    riderLat: pos.coords.latitude,
+                    riderLng: pos.coords.longitude,
+                    status: "Out for Delivery"
+                });
+            }, (err) => alert("GPS Error: Please enable location."), {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 5000
+            });
+        }
+    }
+
+    function finishOrder(id) {
+        if(confirm("Did you collect the cash and deliver the item?")) {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+            db.collection("orders").doc(id).update({
+                status: "Delivered",
+                deliveredAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    }
+</script>
+</body>
+  </html>
