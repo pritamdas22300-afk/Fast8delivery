@@ -3,65 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fast8 - Secure Delivery</title>
+    <title>Fast8 Bondhu - One Stop Shop</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #e63946; --accent: #ffb703; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 80px; }
-        header { background: var(--primary); color: white; padding: 15px; text-align: center; }
+        :root { --primary: #e63946; --secondary: #1d3557; --accent: #ffb703; --light: #f1faee; }
+        body { font-family: 'Poppins', sans-serif; background: #f8f9fa; margin: 0; color: #333; }
+        
+        /* Header & Banners */
+        header { background: var(--primary); color: white; padding: 20px; border-radius: 0 0 25px 25px; text-align: center; box-shadow: 0 4px 15px rgba(230, 57, 70, 0.3); }
+        .promo-banner { background: var(--accent); margin: 15px; padding: 15px; border-radius: 15px; font-weight: bold; font-size: 14px; color: #000; display: flex; align-items: center; gap: 10px; }
+
+        /* Category Tabs */
+        .tabs { display: flex; justify-content: space-around; padding: 10px; position: sticky; top: 0; background: #f8f9fa; z-index: 100; }
+        .tab-item { padding: 10px 20px; border-radius: 25px; background: white; font-weight: bold; border: 1px solid #ddd; cursor: pointer; transition: 0.3s; }
+        .tab-item.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Product Cards */
         .container { padding: 15px; }
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .tab-btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; background: #eee; }
-        .active { background: var(--accent); font-weight: bold; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; z-index: 100; overflow-y: auto; }
-        .modal-content { background: white; margin: 10% auto; padding: 20px; width: 85%; border-radius: 15px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        .status-tracker { background: #333; color: #fff; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 14px; }
+        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .product-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s; padding-bottom: 10px; }
+        .p-info { padding: 10px; }
+        .p-name { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+        .p-price { color: var(--primary); font-weight: 700; }
+        .add-btn { background: var(--primary); color: white; border: none; padding: 8px 15px; border-radius: 8px; width: 90%; margin: 5px auto; display: block; cursor: pointer; }
+
+        /* Parcel Section */
+        .parcel-box { background: white; padding: 20px; border-radius: 15px; display: none; }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+
+        /* Floating Cart */
+        .cart-bar { position: fixed; bottom: 20px; left: 15px; right: 15px; background: var(--secondary); color: white; padding: 15px 20px; border-radius: 15px; display: none; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+
+        /* WhatsApp Button */
+        .wa-float { position: fixed; bottom: 100px; right: 20px; background: #25d366; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 25px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); z-index: 999; text-decoration: none; }
     </style>
 </head>
 <body>
 
-<header><h2>Fast8 Bondhu 🚀</h2></header>
+<header>
+    <h2 style="margin:0;">Fast8 Bondhu 🚀</h2>
+    <p style="font-size: 12px; opacity: 0.9;">Grocery • Tiffin • Parcel Delivery</p>
+</header>
+
+<div class="promo-banner">
+    <i class="fas fa-motorcycle"></i>
+    <span>Free Delivery on orders above ₹500!</span>
+</div>
+
+<div class="tabs">
+    <div class="tab-item active" onclick="switchSection('grocery', this)">Grocery</div>
+    <div class="tab-item" onclick="switchSection('tiffin', this)">Tiffin</div>
+    <div class="tab-item" onclick="switchSection('parcel', this)">Parcel</div>
+    <div class="tab-item" onclick="switchSection('track', this)">Track</div>
+</div>
 
 <div class="container">
-    <div style="display:flex; gap:10px; margin-bottom:15px;">
-        <button id="shop-tab" class="tab-btn active" onclick="showTab('shop')">Shop</button>
-        <button id="track-tab" class="tab-btn" onclick="showTab('track')">Track Order</button>
-    </div>
+    <div id="shop-section" class="product-grid">
+        </div>
 
-    <div id="shop-section">
-        <div id="product-list">Loading products...</div>
+    <div id="parcel-section" class="parcel-box">
+        <h3>Pick & Drop Service</h3>
+        <textarea id="parcelDesc" placeholder="What are we delivering? (e.g. Home keys, Documents)"></textarea>
+        <input type="text" id="pickup" placeholder="Pickup Address">
+        <input type="text" id="drop" placeholder="Drop-off Address">
+        <button class="add-btn" style="width:100%;" onclick="openCheckout('parcel')">Proceed to Checkout</button>
     </div>
 
     <div id="track-section" style="display:none;">
-        <h3>My Recent Orders</h3>
-        <input type="tel" id="trackPhone" placeholder="Enter Registered Phone to Track">
-        <button onclick="trackMyOrders()" style="width:100%; padding:10px; background:var(--primary); color:#fff; border:none; border-radius:8px;">Search Orders</button>
-        <div id="my-orders" style="margin-top:15px;"></div>
+        <div class="product-card" style="padding:20px;">
+            <h3>Track Your Order</h3>
+            <input type="tel" id="trackPhone" placeholder="Enter Mobile Number">
+            <button class="add-btn" onclick="fetchMyOrders()">Check Status</button>
+            <div id="order-status-list" style="margin-top:20px;"></div>
+        </div>
     </div>
 </div>
 
-<div id="cart-bar" style="position:fixed; bottom:20px; left:15px; right:15px; background:#333; color:#fff; padding:15px; border-radius:12px; display:none; justify-content:space-between; align-items:center;">
-    <span id="cart-info">0 Items</span>
-    <button onclick="openCheckout()" style="background:var(--accent); border:none; padding:10px 20px; border-radius:8px; font-weight:bold;">Checkout</button>
-</div>
+<a href="https://wa.me/91XXXXXXXXXX" class="wa-float" target="_blank">
+    <i class="fab fa-whatsapp"></i>
+</a>
 
-<div class="modal" id="checkout-modal">
-    <div class="modal-content">
-        <h3>Order Details</h3>
-        <button onclick="getLocation()" id="loc-btn" style="width:100%; padding:12px; margin-bottom:10px; background:#007bff; color:#fff; border:none; border-radius:8px;">📍 Share Live Location</button>
-        <input type="text" id="custName" placeholder="Full Name">
-        <input type="tel" id="custPhone" placeholder="Phone Number">
-        <input type="text" id="custAddr" placeholder="Address Details">
-        <input type="number" id="dist" placeholder="Distance in KM" oninput="calcTotal()">
-        <p>Total: ₹<span id="final-total">0</span></p>
-        <button onclick="placeOrder()" style="width:100%; padding:15px; background:var(--primary); color:#fff; border:none; border-radius:8px;">Confirm Order</button>
-        <button onclick="closeCheckout()" style="width:100%; background:none; border:none; margin-top:10px; color:gray;">Close</button>
-    </div>
+<div class="cart-bar" id="cart-bar">
+    <div id="cart-details">0 Items | ₹0</div>
+    <button onclick="openCheckout()" style="background:var(--accent); border:none; padding:10px 20px; border-radius:10px; font-weight:bold; cursor:pointer;">View Cart</button>
 </div>
 
 <script>
+    // Firebase Config remains same
     const firebaseConfig = {
         apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
         authDomain: "fast8delivery-a90b4.firebaseapp.com",
@@ -71,99 +101,60 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let products = [], cart = {}, userLoc = null;
+    let currentCat = 'Grocery', cart = {}, products = [];
 
-    function showTab(tab) {
-        document.getElementById('shop-section').style.display = tab === 'shop' ? 'block' : 'none';
-        document.getElementById('track-section').style.display = tab === 'track' ? 'block' : 'none';
-        document.getElementById('shop-tab').classList.toggle('active', tab === 'shop');
-        document.getElementById('track-tab').classList.toggle('active', tab === 'track');
-    }
-
-    // Load Products
-    db.collection("products").onSnapshot(snap => {
-        products = [];
-        const list = document.getElementById('product-list');
-        list.innerHTML = "";
-        snap.forEach(doc => {
-            let p = {id: doc.id, ...doc.data()};
-            products.push(p);
-            list.innerHTML += `
-                <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-                    <div><b>${p.name}</b><br>₹${p.price}/${p.unit}</div>
-                    <div>
-                        <button onclick="updateCart('${p.id}', -1)">-</button>
-                        <span id="q-${p.id}">${cart[p.id] || 0}</span>
-                        <button onclick="updateCart('${p.id}', 1)">+</button>
-                    </div>
-                </div>`;
-        });
-    });
-
-    function updateCart(id, ch) {
-        cart[id] = (cart[id] || 0) + ch;
-        if(cart[id] < 0) cart[id] = 0;
-        document.getElementById(`q-${id}`).innerText = cart[id];
-        let total = 0, count = 0;
-        products.forEach(p => { if(cart[p.id]) { total += p.price * cart[p.id]; count += cart[p.id]; }});
-        document.getElementById('cart-bar').style.display = count > 0 ? 'flex' : 'none';
-        document.getElementById('cart-info').innerText = `${count} Items | ₹${total}`;
-    }
-
-    function getLocation() {
-        if (!navigator.geolocation) return alert("GPS not supported");
-        document.getElementById('loc-btn').innerText = "Trying to find you...";
-        navigator.geolocation.getCurrentPosition(pos => {
-            userLoc = {lat: pos.coords.latitude, lng: pos.coords.longitude};
-            document.getElementById('loc-btn').innerText = "Location Linked ✅";
-            document.getElementById('loc-btn').style.background = "#28a745";
-        }, (err) => {
-            alert("Error: Please enable Location Permission in Browser Settings.");
-            document.getElementById('loc-btn').innerText = "📍 Click again to retry";
-        }, {enableHighAccuracy: true});
-    }
-
-    function openCheckout() { document.getElementById('checkout-modal').style.display = 'block'; }
-    function closeCheckout() { document.getElementById('checkout-modal').style.display = 'none'; }
-    function calcTotal() {
-        let t = parseInt(document.getElementById('cart-info').innerText.split('₹')[1]);
-        let d = parseFloat(document.getElementById('dist').value) || 0;
-        document.getElementById('final-total').innerText = t + (d <= 2 ? 30 : 30 + (d-2)*10);
-    }
-
-    function placeOrder() {
-        const name = document.getElementById('custName').value;
-        const phone = document.getElementById('custPhone').value;
-        if(!name || !phone) return alert("Name/Phone empty!");
+    function switchSection(sec, el) {
+        document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
         
-        let items = "";
-        products.forEach(p => { if(cart[p.id]) items += `${p.name}(${cart[p.id]}), `; });
-
-        db.collection("orders").add({
-            customerName: name, customerPhone: phone, customerAddress: document.getElementById('custAddr').value,
-            items: items, totalAmount: document.getElementById('final-total').innerText,
-            lat: userLoc ? userLoc.lat : null, lng: userLoc ? userLoc.lng : null,
-            status: "Pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => { alert("Order Sent!"); location.reload(); });
+        document.getElementById('shop-section').style.display = (sec==='grocery'||sec==='tiffin') ? 'grid' : 'none';
+        document.getElementById('parcel-section').style.display = (sec==='parcel') ? 'block' : 'none';
+        document.getElementById('track-section').style.display = (sec==='track') ? 'block' : 'none';
+        
+        if(sec==='grocery' || sec==='tiffin') {
+            currentCat = (sec==='grocery') ? 'Grocery' : 'Tiffin';
+            loadData();
+        }
     }
 
-    function trackMyOrders() {
-        const phone = document.getElementById('trackPhone').value;
-        db.collection("orders").where("customerPhone", "==", phone).orderBy("timestamp", "desc").onSnapshot(snap => {
-            const list = document.getElementById('my-orders');
-            list.innerHTML = "";
+    function loadData() {
+        db.collection("products").where("category", "==", currentCat).onSnapshot(snap => {
+            products = [];
+            const grid = document.getElementById('shop-section');
+            grid.innerHTML = "";
             snap.forEach(doc => {
-                const d = doc.data();
-                list.innerHTML += `
-                    <div class="card">
-                        <b>Status: ${d.status}</b><br>
-                        Items: ${d.items}<br>
-                        Total: ₹${d.totalAmount}<br>
-                        ${d.status === 'Out for Delivery' ? '<div class="status-tracker">🚚 Rider is on the way!</div>' : ''}
+                let p = {id: doc.id, ...doc.data()};
+                products.push(p);
+                grid.innerHTML += `
+                    <div class="product-card">
+                        <div style="height:100px; background:#eee; display:flex; align-items:center; justify-content:center; color:#ccc;">IMAGE</div>
+                        <div class="p-info">
+                            <div class="p-name">${p.name}</div>
+                            <div class="p-price">₹${p.price} <small>/ ${p.unit}</small></div>
+                        </div>
+                        <button class="add-btn" onclick="addToCart('${p.id}')">${cart[p.id] ? 'Added ('+cart[p.id]+')' : 'Add to Cart'}</button>
                     </div>`;
             });
         });
     }
+
+    function addToCart(id) {
+        cart[id] = (cart[id] || 0) + 1;
+        updateCartBar();
+        loadData();
+    }
+
+    function updateCartBar() {
+        let count = 0, total = 0;
+        for(let id in cart) {
+            let p = products.find(x => x.id === id);
+            if(p) { count += cart[id]; total += p.price * cart[id]; }
+        }
+        document.getElementById('cart-bar').style.display = count > 0 ? 'flex' : 'none';
+        document.getElementById('cart-details').innerText = `${count} Items | ₹${total}`;
+    }
+
+    // Add fetchMyOrders() for Tracking tab...
 </script>
 </body>
 </html>
