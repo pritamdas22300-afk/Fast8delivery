@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        /* CSS REMAINS UNCHANGED AS PER RULE #1 */
         :root {
             --red: #e63946;
             --yellow: #ffb703;
@@ -21,8 +20,11 @@
             --light: #ffffff;
             --bg: #121212;
         }
+
         * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
         body { background-color: var(--bg); color: white; padding-bottom: 80px; }
+
+        /* --- Rider Header --- */
         header {
             background: var(--red);
             padding: 25px 20px;
@@ -39,6 +41,8 @@
             margin-top: 10px;
             display: inline-block;
         }
+
+        /* --- Task Cards --- */
         .task-container { padding: 20px; }
         .task-card {
             background: #1e1e1e;
@@ -51,6 +55,8 @@
         .task-card h4 { color: var(--yellow); margin-bottom: 10px; font-size: 16px; }
         .task-detail { font-size: 13px; color: #bbb; margin-bottom: 5px; }
         .task-detail i { color: var(--red); width: 20px; }
+
+        /* --- Action Buttons --- */
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         .btn {
             padding: 12px;
@@ -67,6 +73,8 @@
         .btn-call { background: var(--dark); color: white; }
         .btn-status { background: var(--yellow); color: var(--dark); grid-column: span 2; }
         .btn-done { background: var(--success); color: white; grid-column: span 2; }
+
+        /* --- Bottom Nav --- */
         .bottom-nav {
             position: fixed; bottom: 0; width: 100%;
             background: #1e1e1e; display: flex; justify-content: space-around;
@@ -75,6 +83,8 @@
         .nav-item { text-align: center; color: #777; font-size: 11px; text-decoration: none; }
         .nav-item.active { color: var(--yellow); }
         .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+
+        /* --- Login Overlay --- */
         #login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--bg); z-index: 3000; display: flex;
@@ -84,6 +94,7 @@
             background: #1e1e1e; border: 1px solid #333; color: white;
             padding: 15px; border-radius: 15px; margin-bottom: 15px; width: 100%;
         }
+
         .page-content { display: none; }
         .page-content.active { display: block; }
     </style>
@@ -102,20 +113,20 @@
         <div class="rider-info">
             <h2 id="display-rider-name">Welcome, Rider</h2>
             <div class="earning-chip"><i class="fas fa-coins"></i> Today's Earning: <span id="rider-today-cash">₹0</span></div>
-            <span onclick="logout()" style="float:right; font-size:12px; opacity:0.7; cursor:pointer;">Logout</span>
         </div>
     </header>
 
     <div id="tasks-page" class="page-content active">
         <div class="task-container">
             <h3 style="margin-bottom:15px; font-size:18px;">Assigned Tasks</h3>
-            <div id="active-tasks-list"></div>
+            <div id="active-tasks-list">
+                </div>
         </div>
     </div>
 
     <div id="earnings-page" class="page-content">
         <div style="padding: 20px;">
-            <h3>Earnings History (Today)</h3>
+            <h3>Earnings History</h3>
             <div id="earnings-log" style="margin-top:20px;"></div>
         </div>
     </div>
@@ -136,86 +147,55 @@
 <script>
     // --- FIREBASE CONFIG ---
     const firebaseConfig = {
-  apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
-  authDomain: "fast8delivery-a90b4.firebaseapp.com",
-  databaseURL: "https://fast8delivery-a90b4-default-rtdb.firebaseio.com",
-  projectId: "fast8delivery-a90b4",
-  storageBucket: "fast8delivery-a90b4.firebasestorage.app",
-  messagingSenderId: "200027434311",
-  appId: "1:200027434311:web:9bc6caf3db527b602c3062"
-};
+        apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
+        authDomain: "fast8delivery-a90b4.firebaseapp.com",
+        projectId: "fast8delivery-a90b4",
+        storageBucket: "fast8delivery-a90b4.appspot.com",
+        messagingSenderId: "200027434311",
+        appId: "1:200027434311:web:9bc6caf3db527b602c3062"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Logic Fix: Retrieve session from localStorage to prevent re-login on refresh
-    let currentRider = localStorage.getItem("fast8_rider_session") || "";
+    let currentRider = "";
 
-    // Initialization check
-    if(currentRider) {
-        showApp();
-    }
-
+    /**
+     * Simple Login Logic.
+     * In a real system, this would verify against the 'riders' collection.
+     */
     function riderLogin() {
         const name = document.getElementById('rider-auth-name').value.trim();
         if(!name) return alert("Please enter your name!");
         currentRider = name;
-        localStorage.setItem("fast8_rider_session", name);
-        showApp();
-    }
-
-    function logout() {
-        if(confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem("fast8_rider_session");
-            location.reload();
-        }
-    }
-
-    function showApp() {
         document.getElementById('login-overlay').style.display = 'none';
         document.getElementById('main-rider-app').style.display = 'block';
         document.getElementById('display-rider-name').innerText = "Hello, " + currentRider;
         initRiderTasks();
     }
 
+    /**
+     * Real-time listener for orders assigned to THIS rider.
+     * Filter: 'assignedTo' == currentRider AND 'status' != 'Delivered'
+     */
     function initRiderTasks() {
-        // Bug Fix: orderBy("timestamp", "desc") requires a Composite Index in Firebase. 
-        // Ensure you create the index in Firebase Console: Orders -> assignedTo (Asc) & timestamp (Desc).
         db.collection("orders")
           .where("assignedTo", "==", currentRider)
-          .orderBy("timestamp", "desc")
           .onSnapshot(snap => {
             const list = document.getElementById('active-tasks-list');
-            const log = document.getElementById('earnings-log');
+            const earnLog = document.getElementById('earnings-log');
             let dailyCash = 0;
             list.innerHTML = "";
-            log.innerHTML = "";
-            
-            const startOfToday = new Date();
-            startOfToday.setHours(0,0,0,0);
+            earnLog.innerHTML = "";
 
             snap.forEach(doc => {
                 const order = doc.data();
-                const riderPay = order.riderEarning || 30;
-                
-                // Logic Fix: Handle orders where timestamp might be null (pending server sync)
-                const orderTime = order.timestamp ? order.timestamp.toDate() : new Date();
+                const riderPay = 30; // Fixed 30 per delivery for demo
 
                 if(order.status === "Delivered") {
-                    // Only show earnings from today to keep data clean for rider
-                    if(orderTime >= startOfToday) {
-                        dailyCash += riderPay;
-                        log.innerHTML += `
-                            <div style="background:#1e1e1e; padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid var(--success);">
-                                <b>Order #${doc.id.substring(0,6)}</b><br>
-                                <small>${orderTime.toLocaleTimeString()}</small>
-                                <span style="float:right; color:var(--success); font-weight:700;">+₹${riderPay}</span>
-                            </div>`;
-                    }
+                    dailyCash += riderPay;
+                    earnLog.innerHTML += `<div style="padding:10px; border-bottom:1px solid #333;">Order #${doc.id.substring(0,6)} <span style="float:right; color:var(--success);">+₹${riderPay}</span></div>`;
                     return;
                 }
-
-                // Security Fix: Sanitizing Map URL and using standard query format
-                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customerAddress)}`;
 
                 list.innerHTML += `
                     <div class="task-card">
@@ -225,12 +205,12 @@
                         <div class="task-detail"><i class="fas fa-location-dot"></i> ${order.customerAddress}</div>
                         
                         <div class="btn-group">
-                            <button class="btn btn-call" onclick="window.open('tel:${order.customerPhone}', '_self')">
+                            <a href="tel:${order.customerPhone}" class="btn btn-call" style="text-decoration:none;">
                                 <i class="fas fa-phone"></i> Call
-                            </button>
-                            <button class="btn btn-call" onclick="window.open('${mapUrl}', '_blank')">
+                            </a>
+                            <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customerAddress)}" target="_blank" class="btn btn-call" style="text-decoration:none;">
                                 <i class="fas fa-map"></i> Map
-                            </button>
+                            </a>
                             
                             ${order.status === 'Assigned' ? 
                                 `<button class="btn btn-status" onclick="updateStatus('${doc.id}', 'Picked')">MARK PICKED</button>` : 
@@ -241,30 +221,18 @@
                 `;
             });
             document.getElementById('rider-today-cash').innerText = "₹" + dailyCash;
-            if(log.innerHTML === "") log.innerHTML = "<p style='color:#666; text-align:center;'>No earnings recorded today.</p>";
-        }, err => {
-            console.error("Firestore Listen Error:", err);
-            // Alert admin if index is missing
-            if(err.code === "failed-precondition") {
-                alert("Database index required. Please check developer console for link.");
-            }
         });
     }
 
+    /**
+     * Updates order status in Firestore.
+     * Admin and User panels will reflect this change instantly.
+     */
     function updateStatus(orderId, newStatus) {
-        // Safety Fix: Confirm delivery for COD to prevent accidental taps while handling phone
-        if(newStatus === "Delivered") {
-            if(!confirm("CONFIRM: Have you received the cash and handed over the items?")) return;
-        }
-
         db.collection("orders").doc(orderId).update({
-            status: newStatus,
-            deliveredAt: firebase.firestore.FieldValue.serverTimestamp() // Log specific delivery time for dispute resolution
+            status: newStatus
         }).then(() => {
-            if(newStatus === "Delivered") alert("Order completed! ₹ added to your wallet.");
-        }).catch(err => {
-            alert("Connection error! Please check internet and try again.");
-            console.error(err);
+            if(newStatus === "Delivered") alert("Great Job! ₹30 added to earnings.");
         });
     }
 
