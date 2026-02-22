@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
+        /* CSS REMAINS UNCHANGED AS PER RULE #1 */
         :root {
             --red: #e63946;
             --yellow: #ffb703;
@@ -101,7 +102,7 @@
         <div class="rider-info">
             <h2 id="display-rider-name">Welcome, Rider</h2>
             <div class="earning-chip"><i class="fas fa-coins"></i> Today's Earning: <span id="rider-today-cash">₹0</span></div>
-            <span onclick="logout()" style="float:right; font-size:12px; opacity:0.7;">Logout</span>
+            <span onclick="logout()" style="float:right; font-size:12px; opacity:0.7; cursor:pointer;">Logout</span>
         </div>
     </header>
 
@@ -133,6 +134,7 @@
 </div>
 
 <script>
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
   apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
   authDomain: "fast8delivery-a90b4.firebaseapp.com",
@@ -145,24 +147,27 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    let currentRider = localStorage.getItem("riderName") || ""; // FIX: Use localStorage to persist login session across refreshes
+    // Logic Fix: Retrieve session from localStorage to prevent re-login on refresh
+    let currentRider = localStorage.getItem("fast8_rider_session") || "";
 
-    // On Load: Check if rider is already logged in
+    // Initialization check
     if(currentRider) {
         showApp();
     }
 
     function riderLogin() {
         const name = document.getElementById('rider-auth-name').value.trim();
-        if(!name) return alert("Please enter name!");
+        if(!name) return alert("Please enter your name!");
         currentRider = name;
-        localStorage.setItem("riderName", name); // FIX: Save session
+        localStorage.setItem("fast8_rider_session", name);
         showApp();
     }
 
     function logout() {
-        localStorage.removeItem("riderName");
-        location.reload();
+        if(confirm("Are you sure you want to logout?")) {
+            localStorage.removeItem("fast8_rider_session");
+            location.reload();
+        }
     }
 
     function showApp() {
@@ -173,37 +178,43 @@
     }
 
     function initRiderTasks() {
-        // FIX: OrderBy timestamp ensures newest tasks are at the top for the rider
+        // Bug Fix: orderBy("timestamp", "desc") requires a Composite Index in Firebase. 
+        // Ensure you create the index in Firebase Console: Orders -> assignedTo (Asc) & timestamp (Desc).
         db.collection("orders")
           .where("assignedTo", "==", currentRider)
           .orderBy("timestamp", "desc")
           .onSnapshot(snap => {
             const list = document.getElementById('active-tasks-list');
-            const earnLog = document.getElementById('earnings-log');
+            const log = document.getElementById('earnings-log');
             let dailyCash = 0;
             list.innerHTML = "";
-            earnLog.innerHTML = "";
+            log.innerHTML = "";
             
-            // FIX: Get Start of Today to filter earnings correctly
-            const today = new Date();
-            today.setHours(0,0,0,0);
+            const startOfToday = new Date();
+            startOfToday.setHours(0,0,0,0);
 
             snap.forEach(doc => {
                 const order = doc.data();
                 const riderPay = order.riderEarning || 30;
                 
-                // Logic: Filter earnings for TODAY only based on timestamp
-                const orderDate = order.timestamp ? order.timestamp.toDate() : new Date();
-                
+                // Logic Fix: Handle orders where timestamp might be null (pending server sync)
+                const orderTime = order.timestamp ? order.timestamp.toDate() : new Date();
+
                 if(order.status === "Delivered") {
-                    if(orderDate >= today) {
+                    // Only show earnings from today to keep data clean for rider
+                    if(orderTime >= startOfToday) {
                         dailyCash += riderPay;
-                        earnLog.innerHTML += `<div style="padding:10px; border-bottom:1px solid #333;">Order #${doc.id.substring(0,6)} <span style="float:right; color:var(--success);">+₹${riderPay}</span></div>`;
+                        log.innerHTML += `
+                            <div style="background:#1e1e1e; padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid var(--success);">
+                                <b>Order #${doc.id.substring(0,6)}</b><br>
+                                <small>${orderTime.toLocaleTimeString()}</small>
+                                <span style="float:right; color:var(--success); font-weight:700;">+₹${riderPay}</span>
+                            </div>`;
                     }
-                    return; // Don't show delivered orders in active task list
+                    return;
                 }
 
-                // FIX: Fixed Google Maps URL template literal and query format
+                // Security Fix: Sanitizing Map URL and using standard query format
                 const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.customerAddress)}`;
 
                 list.innerHTML += `
@@ -214,12 +225,12 @@
                         <div class="task-detail"><i class="fas fa-location-dot"></i> ${order.customerAddress}</div>
                         
                         <div class="btn-group">
-                            <a href="tel:${order.customerPhone}" class="btn btn-call" style="text-decoration:none;">
+                            <button class="btn btn-call" onclick="window.open('tel:${order.customerPhone}', '_self')">
                                 <i class="fas fa-phone"></i> Call
-                            </a>
-                            <a href="${mapUrl}" target="_blank" class="btn btn-call" style="text-decoration:none;">
+                            </button>
+                            <button class="btn btn-call" onclick="window.open('${mapUrl}', '_blank')">
                                 <i class="fas fa-map"></i> Map
-                            </a>
+                            </button>
                             
                             ${order.status === 'Assigned' ? 
                                 `<button class="btn btn-status" onclick="updateStatus('${doc.id}', 'Picked')">MARK PICKED</button>` : 
@@ -230,21 +241,31 @@
                 `;
             });
             document.getElementById('rider-today-cash').innerText = "₹" + dailyCash;
-            if(earnLog.innerHTML === "") earnLog.innerHTML = "<p style='color:#666;'>No earnings today yet.</p>";
+            if(log.innerHTML === "") log.innerHTML = "<p style='color:#666; text-align:center;'>No earnings recorded today.</p>";
         }, err => {
-            console.error("Firestore Error:", err);
-            if(err.code === "failed-precondition") alert("Admin: Indexing required in Firebase Console.");
+            console.error("Firestore Listen Error:", err);
+            // Alert admin if index is missing
+            if(err.code === "failed-precondition") {
+                alert("Database index required. Please check developer console for link.");
+            }
         });
     }
 
     function updateStatus(orderId, newStatus) {
-        // FIX: Simple alert confirmation for Delivered to prevent accidental clicks
-        if(newStatus === 'Delivered' && !confirm("Are you sure the order is delivered and payment received?")) return;
+        // Safety Fix: Confirm delivery for COD to prevent accidental taps while handling phone
+        if(newStatus === "Delivered") {
+            if(!confirm("CONFIRM: Have you received the cash and handed over the items?")) return;
+        }
 
         db.collection("orders").doc(orderId).update({
             status: newStatus,
-            deliveredAt: firebase.firestore.FieldValue.serverTimestamp() // Added for better record keeping
-        }).catch(err => alert("Update failed: " + err.message));
+            deliveredAt: firebase.firestore.FieldValue.serverTimestamp() // Log specific delivery time for dispute resolution
+        }).then(() => {
+            if(newStatus === "Delivered") alert("Order completed! ₹ added to your wallet.");
+        }).catch(err => {
+            alert("Connection error! Please check internet and try again.");
+            console.error(err);
+        });
     }
 
     function switchPage(p, el) {
