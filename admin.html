@@ -1,258 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fast8 Admin - Control Center</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta charset="UTF-8">
+<title>Fast8Bondhu Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root { --red: #e63946; --yellow: #ffb703; --dark: #1d3557; --light: #f1f4f9; --white: #ffffff; --success: #2a9d8f; }
-        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
-        body { background: var(--light); display: flex; height: 100vh; overflow: hidden; }
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-        /* --- Auth Overlay --- */
-        #auth-overlay { position: fixed; inset: 0; background: var(--dark); z-index: 9999; display: flex; justify-content: center; align-items: center; color: white; }
-        .auth-card { background: white; padding: 40px; border-radius: 20px; width: 350px; color: var(--dark); text-align: center; }
-
-        /* --- Sidebar --- */
-        nav { width: 260px; background: var(--dark); color: white; padding: 30px 20px; display: flex; flex-direction: column; gap: 10px; }
-        .nav-link { padding: 12px 15px; border-radius: 10px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 12px; color: #bdc3c7; }
-        .nav-link:hover, .nav-link.active { background: var(--red); color: white; }
-
-        /* --- Content --- */
-        main { flex: 1; padding: 30px; overflow-y: auto; }
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-        .stat-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        
-        .data-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; padding: 12px; border-bottom: 2px solid var(--light); color: #7f8c8d; font-size: 13px; }
-        td { padding: 12px; border-bottom: 1px solid var(--light); font-size: 14px; }
-
-        .badge { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
-        .status-Pending { background: #fff3cd; color: #856404; }
-        .status-Assigned { background: #cfe2ff; color: #084298; }
-        .status-Delivered { background: #d1e7dd; color: #0a3622; }
-
-        .hidden { display: none !important; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; }
-        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
-        
-        @media print {
-            body * { visibility: hidden; }
-            #invoice-print-area, #invoice-print-area * { visibility: visible; }
-            #invoice-print-area { position: absolute; left: 0; top: 0; width: 100%; }
-        }
-    </style>
+<style>
+body { font-family: Arial; background:#f5f5f5; margin:0; }
+header { background:#e63946; color:#fff; padding:15px; text-align:center; }
+section { padding:15px; }
+.card { background:#fff; padding:15px; border-radius:8px; margin-bottom:15px; }
+input, button, select {
+  width:100%; padding:10px; margin:6px 0;
+}
+button { background:#e63946; color:#fff; border:none; cursor:pointer; }
+.hidden { display:none; }
+table { width:100%; border-collapse:collapse; }
+td, th { border:1px solid #ddd; padding:8px; font-size:13px; }
+</style>
 </head>
+
 <body>
 
-<div id="auth-overlay">
-    <div class="auth-card">
-        <h2 style="margin-bottom: 20px;">Admin Login</h2>
-        <input type="email" id="admin-email" placeholder="Email Address">
-        <input type="password" id="admin-pass" placeholder="Password">
-        <button class="btn" style="background: var(--red); color: white; width: 100%; margin-top: 10px;" onclick="adminLogin()">Login to Dashboard</button>
-    </div>
-</div>
+<header>
+  <h2>Fast8Bondhu – Admin Panel</h2>
+</header>
 
-<nav>
-    <h2 style="color: var(--yellow); margin-bottom: 30px; border-left: 4px solid var(--red); padding-left: 10px;">Fast8 Admin</h2>
-    <div class="nav-link active" onclick="showSection('dashboard', this)"><i class="fas fa-chart-line"></i> Analytics</div>
-    <div class="nav-link" onclick="showSection('orders', this)"><i class="fas fa-shopping-cart"></i> Live Orders</div>
-    <div class="nav-link" onclick="showSection('inventory', this)"><i class="fas fa-boxes"></i> Inventory</div>
-    <div class="nav-link" onclick="showSection('riders', this)"><i class="fas fa-motorcycle"></i> Riders</div>
-    <div class="nav-link" style="margin-top: auto;" onclick="firebase.auth().signOut()"><i class="fas fa-sign-out-alt"></i> Logout</div>
-</nav>
+<!-- LOGIN -->
+<section id="loginSection" class="card">
+  <h3>Admin Login</h3>
+  <input id="email" placeholder="Admin Email">
+  <input id="password" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</section>
 
-<main>
-    <section id="sec-dashboard">
-        <h1>Revenue Performance</h1>
-        <div class="stats-grid">
-            <div class="stat-card"><h3>₹<span id="rev-day">0</span></h3><p>Today's Sales</p></div>
-            <div class="stat-card"><h3>₹<span id="rev-week">0</span></h3><p>Weekly Sales</p></div>
-            <div class="stat-card"><h3>₹<span id="rev-month">0</span></h3><p>Monthly Sales</p></div>
-        </div>
-        <div class="data-container">
-            <h3>Recent Activity</h3>
-            <div id="revenue-chart-placeholder" style="height: 200px; display: flex; align-items: center; justify-content: center; color: #ccc;">
-                [Live Data Processing Active]
-            </div>
-        </div>
-    </section>
+<!-- DASHBOARD -->
+<section id="dashboard" class="hidden">
 
-    <section id="sec-orders" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h1>Active Orders</h1>
-        </div>
-        <div class="data-container" style="margin-top: 20px;">
-            <table>
-                <thead><tr><th>Order ID</th><th>Customer</th><th>Amount</th><th>Status</th><th>Rider</th><th>Action</th></tr></thead>
-                <tbody id="orders-table-body"></tbody>
-            </table>
-        </div>
-    </section>
+  <!-- ADD PRODUCT -->
+  <div class="card">
+    <h3>Add Product</h3>
+    <input id="pName" placeholder="Product Name">
+    <input id="pPrice" type="number" placeholder="Price">
+    <input id="pStock" type="number" placeholder="Stock">
+    <button onclick="addProduct()">Add Product</button>
+  </div>
 
-    <section id="sec-inventory" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h1>Product Management</h1>
-            <button class="btn" style="background:var(--yellow)" onclick="openProductModal()">+ Add Product</button>
-        </div>
-        <div class="data-container" style="margin-top: 20px;">
-            <table>
-                <thead><tr><th>Product Name</th><th>Stock</th><th>Price</th><th>Action</th></tr></thead>
-                <tbody id="inventory-table-body"></tbody>
-            </table>
-        </div>
-    </section>
-</main>
+  <!-- PRODUCT LIST -->
+  <div class="card">
+    <h3>Products</h3>
+    <div id="productList"></div>
+  </div>
 
-<div id="invoice-print-area" class="hidden" style="padding: 40px; color: black;">
-    <h1 style="border-bottom: 2px solid #000;">FAST8 DELIVERY INVOICE</h1>
-    <div id="invoice-content" style="margin-top: 20px;"></div>
-</div>
+  <!-- ORDERS -->
+  <div class="card">
+    <h3>Orders</h3>
+    <div id="orderList"></div>
+  </div>
+
+</section>
 
 <script>
-    // --- FIREBASE INIT ---
-    const firebaseConfig = { /* USE SAME CONFIG AS USER PANEL */ };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+/* 🔥 Firebase Config (YOURS) */
+firebase.initializeApp({
+  apiKey: "AIzaSyC2zOBXJZenhCezfVNa4WdAYNFgG_ivb98",
+  authDomain: "fast8bondhu-6f6a6.firebaseapp.com",
+  projectId: "fast8bondhu-6f6a6",
+  storageBucket: "fast8bondhu-6f6a6.firebasestorage.app",
+  messagingSenderId: "796987979513",
+  appId: "1:796987979513:web:0befb96daba208f1bd5428"
+});
 
-    let allRiders = [];
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-    // --- AUTHENTICATION ---
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            document.getElementById('auth-overlay').classList.add('hidden');
-            initializeAdminData();
-        } else {
-            document.getElementById('auth-overlay').classList.remove('hidden');
-        }
+/* LOGIN */
+function login(){
+  auth.signInWithEmailAndPassword(
+    email.value, password.value
+  ).catch(e=>alert(e.message));
+}
+
+auth.onAuthStateChanged(user=>{
+  if(user){
+    loginSection.classList.add("hidden");
+    dashboard.classList.remove("hidden");
+    loadProducts();
+    loadOrders();
+  }
+});
+
+/* PRODUCTS */
+function addProduct(){
+  db.collection("products").add({
+    name:pName.value,
+    price:Number(pPrice.value),
+    stock:Number(pStock.value),
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  pName.value=pPrice.value=pStock.value="";
+}
+
+function loadProducts(){
+  db.collection("products").onSnapshot(snap=>{
+    productList.innerHTML="";
+    snap.forEach(d=>{
+      let p=d.data();
+      productList.innerHTML+=`
+        <p>
+          ${p.name} | ₹${p.price} | Stock:${p.stock}
+          <button onclick="deleteProduct('${d.id}')">Delete</button>
+        </p>`;
     });
+  });
+}
 
-    function adminLogin() {
-        const email = document.getElementById('admin-email').value;
-        const pass = document.getElementById('admin-pass').value;
-        auth.signInWithEmailAndPassword(email, pass).catch(err => alert(err.message));
-    }
+function deleteProduct(id){
+  db.collection("products").doc(id).delete();
+}
 
-    function initializeAdminData() {
-        listenToOrders();
-        listenToInventory();
-        loadRiders();
-    }
+/* ORDERS */
+function loadOrders(){
+  db.collection("orders")
+    .orderBy("timestamp","desc")
+    .onSnapshot(snap=>{
+      orderList.innerHTML="";
+      snap.forEach(d=>{
+        let o=d.data();
+        orderList.innerHTML+=`
+          <div style="border-bottom:1px solid #ddd; padding:8px">
+            <b>${o.customerName}</b> | ₹${o.totalAmount}<br>
+            Status:
+            <select onchange="updateStatus('${d.id}',this.value)">
+              <option ${o.status=="Pending"?"selected":""}>Pending</option>
+              <option ${o.status=="Assigned"?"selected":""}>Assigned</option>
+              <option ${o.status=="Delivered"?"selected":""}>Delivered</option>
+            </select>
+          </div>`;
+      });
+    });
+}
 
-    // --- ANALYTICS LOGIC ---
-    function listenToOrders() {
-        db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
-            let daily = 0, weekly = 0, monthly = 0;
-            const now = new Date();
-            const tableBody = document.getElementById('orders-table-body');
-            tableBody.innerHTML = "";
-
-            snap.forEach(doc => {
-                const o = doc.data();
-                if(!o.timestamp) return;
-                
-                const orderDate = o.timestamp.toDate();
-                const diffTime = Math.abs(now - orderDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                // Revenue Tally
-                if(diffDays <= 1) daily += o.totalAmount;
-                if(diffDays <= 7) weekly += o.totalAmount;
-                if(diffDays <= 30) monthly += o.totalAmount;
-
-                // Order Row
-                tableBody.innerHTML += `
-                    <tr>
-                        <td>#${doc.id.substring(0,6)}</td>
-                        <td>${o.customerName}<br><small>${o.customerPhone}</small></td>
-                        <td>₹${o.totalAmount}</td>
-                        <td><span class="badge status-${o.status}">${o.status}</span></td>
-                        <td>
-                            <select onchange="assignRider('${doc.id}', this.value)">
-                                <option value="">Assign Rider</option>
-                                ${allRiders.map(r => `<option value="${r.name}" ${o.assignedTo === r.name ? 'selected' : ''}>${r.name}</option>`).join('')}
-                            </select>
-                        </td>
-                        <td>
-                            <button class="btn" style="background:#eee; font-size:11px;" onclick="printOrder('${doc.id}')">Invoice</button>
-                        </td>
-                    </tr>`;
-            });
-
-            document.getElementById('rev-day').innerText = daily;
-            document.getElementById('rev-week').innerText = weekly;
-            document.getElementById('rev-month').innerText = monthly;
-        });
-    }
-
-    // --- INVENTORY LOGIC ---
-    function listenToInventory() {
-        db.collection("products").onSnapshot(snap => {
-            const table = document.getElementById('inventory-table-body');
-            table.innerHTML = "";
-            snap.forEach(doc => {
-                const p = doc.data();
-                table.innerHTML += `
-                    <tr>
-                        <td>${p.name}</td>
-                        <td style="color: ${p.stock < 5 ? 'red' : 'inherit'}"><b>${p.stock}</b></td>
-                        <td>₹${p.price}</td>
-                        <td><button class="btn" style="color:red" onclick="deleteProduct('${doc.id}')"><i class="fas fa-trash"></i></button></td>
-                    </tr>`;
-            });
-        });
-    }
-
-    // --- ACTIONS ---
-    function assignRider(orderId, riderName) {
-        db.collection("orders").doc(orderId).update({
-            assignedTo: riderName,
-            status: "Assigned"
-        });
-    }
-
-    function loadRiders() {
-        db.collection("riders").onSnapshot(snap => {
-            allRiders = [];
-            snap.forEach(doc => allRiders.push(doc.data()));
-        });
-    }
-
-    function printOrder(orderId) {
-        db.collection("orders").doc(orderId).get().then(doc => {
-            const o = doc.data();
-            const content = `
-                <p><b>Order ID:</b> #${doc.id}</p>
-                <p><b>Customer:</b> ${o.customerName} (${o.customerPhone})</p>
-                <p><b>Address:</b> ${o.customerAddress}</p>
-                <hr>
-                <table style="width:100%; margin-top:20px;">
-                    ${o.items.map(i => `<tr><td>${i.name} x ${i.qty}</td><td style="text-align:right">₹${i.price * i.qty}</td></tr>`).join('')}
-                    <tr style="font-weight:bold; border-top:1px solid #000;"><td>Total</td><td style="text-align:right">₹${o.totalAmount}</td></tr>
-                </table>
-            `;
-            document.getElementById('invoice-content').innerHTML = content;
-            window.print();
-        });
-    }
-
-    function showSection(id, el) {
-        document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
-        document.getElementById('sec-' + id).classList.remove('hidden');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        el.classList.add('active');
-    }
+function updateStatus(id,status){
+  db.collection("orders").doc(id).update({status});
+}
 </script>
+
 </body>
 </html>
