@@ -190,13 +190,14 @@
     // --- FIREBASE SETUP ---
     // Use your existing config here
     const firebaseConfig = {
-        apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
-        authDomain: "fast8delivery-a90b4.firebaseapp.com",
-        projectId: "fast8delivery-a90b4",
-        storageBucket: "fast8delivery-a90b4.appspot.com",
-        messagingSenderId: "200027434311",
-        appId: "1:200027434311:web:9bc6caf3db527b602c3062"
-    };
+  apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
+  authDomain: "fast8delivery-a90b4.firebaseapp.com",
+  databaseURL: "https://fast8delivery-a90b4-default-rtdb.firebaseio.com",
+  projectId: "fast8delivery-a90b4",
+  storageBucket: "fast8delivery-a90b4.firebasestorage.app",
+  messagingSenderId: "200027434311",
+  appId: "1:200027434311:web:9bc6caf3db527b602c3062"
+};
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
