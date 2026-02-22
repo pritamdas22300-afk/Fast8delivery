@@ -3,353 +3,373 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fast8 Bondhu - Order Now</title>
-    
+    <title>Fast8 Bondhu - All-in-One Delivery System</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
-        :root {
-            --red: #e63946;
-            --yellow: #ffb703;
-            --dark: #1d3557;
-            --light: #f8f9fa;
-            --white: #ffffff;
-        }
-
+        :root { --red: #e63946; --yellow: #ffb703; --dark: #1d3557; --light: #f8f9fa; --white: #ffffff; --success: #2a9d8f; --bg: #121212; }
         * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
-        body { background-color: var(--light); color: var(--dark); padding-bottom: 70px; }
+        .hidden { display: none !important; }
+        
+        /* Layout Wrappers */
+        #panel-user, #panel-admin, #panel-rider { min-height: 100vh; }
+        
+        /* Shared Components */
+        .btn { padding: 10px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-pending { background: #fff3cd; color: #856404; }
+        .badge-delivered { background: #d1e7dd; color: #0a3622; }
 
-        /* --- UI Components --- */
-        header {
-            background: var(--red);
-            color: white;
-            padding: 20px;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom-left-radius: 20px;
-            border-bottom-right-radius: 20px;
-        }
+        /* USER PANEL STYLES */
+        .u-header { background: var(--red); color: white; padding: 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; }
+        .u-product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; }
+        .u-card { background: white; border-radius: 15px; padding: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .cart-overlay { position: fixed; bottom: 0; width: 100%; background: white; border-top-left-radius: 25px; border-top-right-radius: 25px; padding: 20px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); z-index: 2000; }
 
-        .category-scroll {
-            display: flex;
-            overflow-x: auto;
-            padding: 15px;
-            gap: 10px;
-            scrollbar-width: none;
-        }
-        .category-chip {
-            background: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            white-space: nowrap;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .category-chip.active { background: var(--yellow); color: var(--dark); }
+        /* ADMIN PANEL STYLES */
+        .a-sidebar { width: 260px; background: var(--dark); color: white; padding: 30px 20px; display: flex; flex-direction: column; gap: 10px; height: 100vh; position: fixed; }
+        .a-main { margin-left: 260px; padding: 30px; width: calc(100% - 260px); }
+        .a-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .a-container { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 
-        /* --- Product Grid --- */
-        .product-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            padding: 15px;
-        }
-        .product-card {
-            background: white;
-            border-radius: 15px;
-            padding: 12px;
-            text-align: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            position: relative;
-        }
-        .product-price { color: var(--red); font-weight: 700; font-size: 18px; margin: 5px 0; }
-        .add-btn {
-            background: var(--yellow);
-            border: none;
-            width: 100%;
-            padding: 8px;
-            border-radius: 10px;
-            font-weight: 700;
-            cursor: pointer;
-        }
-
-        /* --- Cart & Checkout --- */
-        .cart-overlay {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: white;
-            border-top-left-radius: 25px;
-            border-top-right-radius: 25px;
-            padding: 20px;
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
-            display: none;
-            z-index: 2000;
-        }
-
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            border-top: 1px solid #eee;
-        }
-        .nav-item { text-align: center; color: #888; text-decoration: none; font-size: 12px; }
-        .nav-item.active { color: var(--red); }
-
-        .form-input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-        }
-
-        /* --- Order Tracking --- */
-        .status-card {
-            background: var(--dark);
-            color: white;
-            margin: 15px;
-            padding: 20px;
-            border-radius: 15px;
-        }
-
-        .hidden { display: none; }
+        /* RIDER PANEL STYLES */
+        .r-body { background-color: var(--bg); color: white; }
+        .r-card { background: #1e1e1e; border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid #333; }
     </style>
 </head>
-<body>
+<body class="r-body">
 
-<header>
-    <div>
-        <h2 style="line-height: 1;">Fast8 Bondhu</h2>
-        <small>Freshness Delivered</small>
-    </div>
-    <div onclick="toggleCart()" style="position: relative;">
-        <i class="fas fa-shopping-cart fa-lg"></i>
-        <span id="cart-count" style="position:absolute; top:-10px; right:-10px; background:var(--yellow); color:var(--dark); padding:2px 6px; border-radius:50%; font-size:10px; font-weight:700;">0</span>
-    </div>
-</header>
+<div style="position: fixed; top:0; right:0; z-index:9999; background:black; padding:5px; opacity: 0.5;">
+    <select onchange="switchPanel(this.value)">
+        <option value="user">User Panel</option>
+        <option value="admin">Admin Panel</option>
+        <option value="rider">Rider Panel</option>
+    </select>
+</div>
 
-<div id="page-home" class="page-content">
-    <div class="category-scroll">
-        <div class="category-chip active">All</div>
-        <div class="category-chip">Vegetables</div>
-        <div class="category-chip">Grocery</div>
-        <div class="category-chip">Fruits</div>
-    </div>
-    <div class="product-grid" id="product-list">
+<div id="panel-user">
+    <header class="u-header">
+        <div><h2>Fast8 Bondhu</h2><small>Freshness Delivered</small></div>
+        <div onclick="toggleCart()" style="position: relative; cursor: pointer;">
+            <i class="fas fa-shopping-cart fa-lg"></i>
+            <span id="cart-count" style="position:absolute; top:-10px; right:-10px; background:var(--yellow); color:var(--dark); padding:2px 6px; border-radius:50%; font-size:10px; font-weight:700;">0</span>
         </div>
-</div>
-
-<div id="page-orders" class="page-content hidden">
-    <div style="padding: 20px;">
-        <h3>Track Your Orders</h3>
-        <div id="active-orders-container">
-            <p style="color: #666; margin-top: 20px;">No active orders found.</p>
+    </header>
+    <div id="u-page-home">
+        <div class="u-product-grid" id="product-list"></div>
+    </div>
+    <div id="u-page-orders" class="hidden" style="padding:20px;">
+        <h3>Track Order</h3>
+        <div id="active-orders-container"></div>
+    </div>
+    <div id="cart-modal" class="cart-overlay hidden">
+        <h3>Your Basket</h3>
+        <div id="cart-items" style="max-height: 200px; overflow-y: auto; margin: 15px 0; color: #333;"></div>
+        <input type="text" id="cust-name" class="form-input" style="width:100%; padding:10px; margin-bottom:10px;" placeholder="Name">
+        <input type="text" id="cust-phone" class="form-input" style="width:100%; padding:10px; margin-bottom:10px;" placeholder="Phone">
+        <input type="text" id="cust-address" class="form-input" style="width:100%; padding:10px; margin-bottom:10px;" placeholder="Address">
+        <div style="display: flex; justify-content: space-between; font-weight: 700; color:#333;">
+            <span>Total (+ ₹20 Delivery):</span><span id="cart-total-display">₹0</span>
         </div>
+        <button class="btn" style="background:var(--yellow); width:100%; margin-top:15px;" onclick="placeOrder()">Confirm Order</button>
+        <button class="btn" style="background:none; color:var(--red); width:100%;" onclick="toggleCart()">Close</button>
     </div>
 </div>
 
-<div id="cart-modal" class="cart-overlay">
-    <h3>Your Basket</h3>
-    <div id="cart-items" style="max-height: 200px; overflow-y: auto; margin: 15px 0;"></div>
-    <hr>
-    <div style="margin: 15px 0;">
-        <input type="text" id="cust-name" class="form-input" placeholder="Your Name">
-        <input type="text" id="cust-phone" class="form-input" placeholder="Phone Number">
-        <input type="text" id="cust-address" class="form-input" placeholder="Delivery Address">
-        <small style="color: var(--grey);">* Delivery charge: ₹10 per KM (Auto-calculated)</small>
-    </div>
-    <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 18px;">
-        <span>Total:</span>
-        <span id="cart-total-display">₹0</span>
-    </div>
-    <button class="add-btn" style="padding: 15px; margin-top: 15px;" onclick="placeOrder()">Confirm Order</button>
-    <button onclick="toggleCart()" style="width: 100%; background: none; border: none; margin-top: 10px; color: var(--red);">Close</button>
+<div id="panel-admin" class="hidden" style="background: #f1f4f9; color: #1d3557;">
+    <nav class="a-sidebar">
+        <h2>Fast8 Admin</h2>
+        <div class="nav-link" onclick="showASection('dashboard')"><i class="fas fa-th-large"></i> Dashboard</div>
+        <div class="nav-link" onclick="showASection('inventory')"><i class="fas fa-boxes"></i> Inventory</div>
+        <div class="nav-link" onclick="showASection('riders')"><i class="fas fa-motorcycle"></i> Riders</div>
+    </nav>
+    <main class="a-main">
+        <section id="a-dashboard">
+            <div class="a-stats">
+                <div class="a-container"><p>Total Revenue</p><h3 id="stat-revenue">₹0</h3></div>
+                <div class="a-container"><p>Active Riders</p><h3 id="stat-active-riders">0</h3></div>
+            </div>
+            <div class="a-container">
+                <h3>Live Orders</h3>
+                <table style="width:100%; border-spacing: 0 10px;">
+                    <thead><tr style="text-align:left; color:#777;"><th>ID</th><th>Customer</th><th>Status</th><th>Assign Rider</th><th>Action</th></tr></thead>
+                    <tbody id="recent-orders-table"></tbody>
+                </table>
+            </div>
+        </section>
+        <section id="a-inventory" class="hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h1>Inventory</h1>
+                <button class="btn" style="background:var(--yellow)" onclick="toggleModal('modal-product', true)">+ Add</button>
+            </div>
+            <div class="a-container" style="margin-top:20px;">
+                <table style="width:100%;">
+                    <thead><tr style="text-align:left;"><th>Name</th><th>Price</th><th>Stock</th><th>Action</th></tr></thead>
+                    <tbody id="inventory-table"></tbody>
+                </table>
+            </div>
+        </section>
+        <section id="a-riders" class="hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h1>Riders</h1>
+                <button class="btn" style="background:var(--yellow)" onclick="toggleModal('modal-rider', true)">+ New Rider</button>
+            </div>
+            <div class="a-container" style="margin-top:20px;">
+                <table style="width:100%;">
+                    <thead><tr style="text-align:left;"><th>Name</th><th>Phone</th><th>Status</th></tr></thead>
+                    <tbody id="rider-table"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 </div>
 
-<div class="bottom-nav">
-    <a href="#" class="nav-item active" onclick="showPage('home')"><i class="fas fa-home"></i><br>Home</a>
-    <a href="#" class="nav-item" onclick="showPage('orders')"><i class="fas fa-box"></i><br>My Orders</a>
-    <a href="tel:9100000000" class="nav-item"><i class="fas fa-headset"></i><br>Support</a>
+<div id="panel-rider" class="hidden">
+    <div id="login-overlay" style="padding:40px; text-align:center;">
+        <h1>Rider Login</h1>
+        <input type="text" id="rider-auth-name" style="width:100%; padding:15px; margin:20px 0; border-radius:10px;" placeholder="Full Name">
+        <button class="btn" style="background:var(--yellow); width:100%;" onclick="riderLogin()">Start Working</button>
+    </div>
+    <div id="main-rider-app" class="hidden">
+        <header style="padding:20px; background:var(--red);">
+            <h2 id="display-rider-name">Rider</h2>
+            <div style="background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:10px; display:inline-block;">Earning: ₹<span id="rider-today-cash">0</span></div>
+        </header>
+        <div id="active-tasks-list" style="padding:20px;"></div>
+    </div>
+</div>
+
+<div id="modal-product" class="cart-overlay hidden" style="top:20%; bottom:auto; width:400px; left:50%; transform:translateX(-50%); color: #333;">
+    <h3>Add Product</h3>
+    <input type="text" id="p-name" placeholder="Name" style="width:100%; margin:10px 0; padding:8px;">
+    <input type="number" id="p-price" placeholder="Price" style="width:100%; margin:10px 0; padding:8px;">
+    <input type="number" id="p-stock" placeholder="Stock" style="width:100%; margin:10px 0; padding:8px;">
+    <button class="btn" style="background:var(--red); color:white; width:100%;" onclick="saveProduct()">Save</button>
+    <button class="btn" style="width:100%;" onclick="toggleModal('modal-product', false)">Close</button>
+</div>
+
+<div id="modal-rider" class="cart-overlay hidden" style="top:20%; bottom:auto; width:400px; left:50%; transform:translateX(-50%); color: #333;">
+    <h3>Add Rider</h3>
+    <input type="text" id="r-name" placeholder="Rider Name" style="width:100%; margin:10px 0; padding:8px;">
+    <input type="text" id="r-phone" placeholder="Phone" style="width:100%; margin:10px 0; padding:8px;">
+    <button class="btn" style="background:var(--red); color:white; width:100%;" onclick="saveRider()">Save</button>
+    <button class="btn" style="width:100%;" onclick="toggleModal('modal-rider', false)">Close</button>
 </div>
 
 <script>
-    // --- FIREBASE SETUP ---
-    // Use your existing config here
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
-  apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
-  authDomain: "fast8delivery-a90b4.firebaseapp.com",
-  databaseURL: "https://fast8delivery-a90b4-default-rtdb.firebaseio.com",
-  projectId: "fast8delivery-a90b4",
-  storageBucket: "fast8delivery-a90b4.firebasestorage.app",
-  messagingSenderId: "200027434311",
-  appId: "1:200027434311:web:9bc6caf3db527b602c3062"
-};
+        apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
+        authDomain: "fast8delivery-a90b4.firebaseapp.com",
+        projectId: "fast8delivery-a90b4",
+        storageBucket: "fast8delivery-a90b4.appspot.com",
+        messagingSenderId: "200027434311",
+        appId: "1:200027434311:web:9bc6caf3db527b602c3062"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // --- APP STATE ---
+    // --- SHARED STATE & UTILS ---
     let cart = [];
     let products = [];
+    let ridersList = [];
+    const deliveryFee = 20;
 
-    /**
-     * Fetch products from Firestore 'products' collection.
-     * Needed to display real-time inventory and pricing.
-     */
+    function switchPanel(panel) {
+        document.getElementById('panel-user').classList.add('hidden');
+        document.getElementById('panel-admin').classList.add('hidden');
+        document.getElementById('panel-rider').classList.add('hidden');
+        document.getElementById('panel-' + panel).classList.remove('hidden');
+        if(panel === 'admin') initAdmin();
+    }
+
+    // ================= USER LOGIC =================
+
     function loadProducts() {
         db.collection("products").onSnapshot(snap => {
             const list = document.getElementById('product-list');
-            list.innerHTML = "";
-            products = [];
+            list.innerHTML = ""; products = [];
             snap.forEach(doc => {
-                const p = doc.data();
-                p.id = doc.id;
-                products.push(p);
+                const p = doc.data(); p.id = doc.id; products.push(p);
                 list.innerHTML += `
-                    <div class="product-card">
-                        <div style="height:80px; background:#f0f0f0; border-radius:10px; margin-bottom:10px; display:flex; align-items:center; justify-content:center;">
-                            <i class="fas fa-leaf" style="color:#2a9d8f;"></i>
-                        </div>
-                        <h4 style="font-size:14px;">${p.name}</h4>
-                        <p style="font-size:11px; color:#666;">${p.unit || 'per unit'}</p>
-                        <div class="product-price">₹${p.price}</div>
-                        <button class="add-btn" onclick="addToCart('${p.id}')">Add +</button>
-                    </div>
-                `;
+                    <div class="u-card">
+                        <h4>${p.name}</h4><div style="color:var(--red); font-weight:700;">₹${p.price}</div>
+                        <button class="btn" style="background:var(--yellow); width:100%; margin-top:10px;" onclick="addToCart('${p.id}')">Add +</button>
+                    </div>`;
             });
         });
     }
 
-    /**
-     * Add items to local cart. 
-     * Handles quantity logic locally before pushing to Firestore 'orders'.
-     */
     function addToCart(id) {
-        const item = products.find(p => p.id === id);
-        const existing = cart.find(c => c.id === id);
-        if(existing) {
-            existing.qty++;
-        } else {
-            cart.push({...item, qty: 1});
-        }
+        const p = products.find(x => x.id === id);
+        const existing = cart.find(x => x.id === id);
+        if(existing) existing.qty++; else cart.push({...p, qty:1});
         updateCartUI();
     }
 
     function updateCartUI() {
-        const count = cart.reduce((acc, curr) => acc + curr.qty, 0);
-        const total = cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
+        const count = cart.reduce((a, b) => a + b.qty, 0);
+        const total = cart.reduce((a, b) => a + (b.price * b.qty), 0);
         document.getElementById('cart-count').innerText = count;
-        document.getElementById('cart-total-display').innerText = "₹" + (total + 20); // Static 20 delivery for demo
-        
-        const cartItems = document.getElementById('cart-items');
-        cartItems.innerHTML = cart.map(item => `
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                <span>${item.name} x ${item.qty}</span>
-                <span>₹${item.price * item.qty}</span>
-            </div>
-        `).join("");
+        document.getElementById('cart-total-display').innerText = "₹" + (total + deliveryFee);
+        document.getElementById('cart-items').innerHTML = cart.map(i => `<div>${i.name} x ${i.qty}</div>`).join("");
     }
 
-    function toggleCart() {
-        const modal = document.getElementById('cart-modal');
-        modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-    }
+    function toggleCart() { document.getElementById('cart-modal').classList.toggle('hidden'); }
 
-    /**
-     * Push order to Firestore 'orders' collection.
-     * This triggers real-time updates on the Admin and Rider panels.
-     */
     async function placeOrder() {
         const name = document.getElementById('cust-name').value;
         const phone = document.getElementById('cust-phone').value;
         const address = document.getElementById('cust-address').value;
-
-        if(!name || !phone || !address || cart.length === 0) {
-            return alert("Please fill all details and add items to cart!");
-        }
-
+        if(!name || cart.length === 0) return alert("Fill details!");
+        
         const orderData = {
-            customerName: name,
-            customerPhone: phone,
-            customerAddress: address,
-            items: cart,
-            totalAmount: cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0) + 20,
-            status: "Pending", // Admin will change this to 'Assigned'
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            customerName: name, customerPhone: phone, customerAddress: address,
+            items: cart, totalAmount: cart.reduce((a, b) => a + (b.price * b.qty), 0) + deliveryFee,
+            status: "Pending", timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            assignedTo: ""
         };
-
-        try {
-            const docRef = await db.collection("orders").add(orderData);
-            // Save order ID to localStorage so user can track it
-            localStorage.setItem('lastOrderId', docRef.id);
-            alert("Order Placed Successfully!");
-            cart = [];
-            updateCartUI();
-            toggleCart();
-            showPage('orders');
-            trackOrders();
-        } catch (e) {
-            alert("Error: " + e.message);
-        }
+        const doc = await db.collection("orders").add(orderData);
+        localStorage.setItem('lastOrderId', doc.id);
+        cart = []; updateCartUI(); toggleCart();
+        alert("Ordered!"); trackUserOrder();
     }
 
-    /**
-     * Real-time listener for user's own orders.
-     * Ensures the customer sees status changes (e.g., 'Picked', 'Delivered') instantly.
-     */
-    function trackOrders() {
-        const lastId = localStorage.getItem('lastOrderId');
-        if(!lastId) return;
-
-        db.collection("orders").doc(lastId).onSnapshot(doc => {
+    function trackUserOrder() {
+        const id = localStorage.getItem('lastOrderId');
+        if(!id) return;
+        db.collection("orders").doc(id).onSnapshot(doc => {
             if(!doc.exists) return;
-            const order = doc.data();
-            const container = document.getElementById('active-orders-container');
-            
-            let statusColor = order.status === 'Delivered' ? '#2a9d8f' : '#ffb703';
-            
-            container.innerHTML = `
-                <div class="status-card" style="border-left: 5px solid ${statusColor}">
-                    <div style="display:flex; justify-content:space-between; align-items:start;">
-                        <div>
-                            <h4>Order #${doc.id.substring(0,6)}</h4>
-                            <p style="font-size:12px; margin-top:5px;">Status: <b style="color:${statusColor}">${order.status}</b></p>
-                        </div>
-                        <span style="font-weight:700;">₹${order.totalAmount}</span>
-                    </div>
-                    <div style="margin-top:15px; font-size:12px; opacity:0.8;">
-                        <i class="fas fa-map-marker-alt"></i> ${order.customerAddress}
-                    </div>
-                </div>
-            `;
+            const o = doc.data();
+            document.getElementById('u-page-orders').classList.remove('hidden');
+            document.getElementById('active-orders-container').innerHTML = `
+                <div style="background:var(--dark); color:white; padding:15px; border-radius:10px;">
+                    Order Status: <b>${o.status}</b><br>Rider: ${o.assignedTo || 'Wait...'}
+                </div>`;
         });
     }
 
-    function showPage(pageId) {
-        document.querySelectorAll('.page-content').forEach(p => p.classList.add('hidden'));
-        document.getElementById('page-' + pageId).classList.remove('hidden');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+    // ================= ADMIN LOGIC =================
+
+    function initAdmin() {
+        // Fix: Populate Riders Global List first for dropdowns
+        db.collection("riders").onSnapshot(snap => {
+            ridersList = [];
+            const tbody = document.getElementById('rider-table');
+            tbody.innerHTML = "";
+            snap.forEach(doc => {
+                const r = doc.data(); r.id = doc.id; ridersList.push(r);
+                tbody.innerHTML += `<tr><td>${r.name}</td><td>${r.phone}</td><td>${r.status}</td></tr>`;
+            });
+            document.getElementById('stat-active-riders').innerText = snap.size;
+        });
+
+        db.collection("orders").orderBy("timestamp", "desc").onSnapshot(snap => {
+            const tbody = document.getElementById('recent-orders-table');
+            tbody.innerHTML = ""; let rev = 0;
+            snap.forEach(doc => {
+                const o = doc.data(); rev += o.totalAmount || 0;
+                // Fix: Status safety check
+                const status = (o.status || "Pending").toLowerCase();
+                tbody.innerHTML += `
+                    <tr>
+                        <td>#${doc.id.substring(0,4)}</td>
+                        <td>${o.customerName}</td>
+                        <td><span class="badge badge-pending">${o.status}</span></td>
+                        <td>
+                            <select onchange="assignRider('${doc.id}', this.value)">
+                                <option value="">Assign...</option>
+                                ${ridersList.map(r => `<option value="${r.name}" ${o.assignedTo === r.name ? 'selected' : ''}>${r.name}</option>`).join("")}
+                            </select>
+                        </td>
+                        <td><button class="btn" style="background:#eee" onclick="printInvoice('${doc.id}')">Invoice</button></td>
+                    </tr>`;
+            });
+            document.getElementById('stat-revenue').innerText = "₹" + rev;
+        });
+
+        db.collection("products").onSnapshot(snap => {
+            const tbody = document.getElementById('inventory-table');
+            tbody.innerHTML = "";
+            snap.forEach(doc => {
+                const p = doc.data();
+                tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.price}</td><td>${p.stock}</td><td><button onclick="deleteItem('${doc.id}')">X</button></td></tr>`;
+            });
+        });
     }
 
-    // --- INIT ---
-    window.onload = () => {
-        loadProducts();
-        trackOrders();
-    };
+    function assignRider(oid, rname) {
+        db.collection("orders").doc(oid).update({ assignedTo: rname, status: "Assigned" });
+    }
+
+    function deleteItem(id) { if(confirm("Delete?")) db.collection("products").doc(id).delete(); }
+
+    function printInvoice(id) {
+        db.collection("orders").doc(id).get().then(doc => {
+            const o = doc.data();
+            // Handle array of objects or generic items
+            const itemText = o.items.map(i => `${i.name} x${i.qty}`).join(", ");
+            alert(`INVOICE #${id}\nCustomer: ${o.customerName}\nItems: ${itemText}\nTotal: ₹${o.totalAmount}`);
+        });
+    }
+
+    function saveProduct() {
+        const p = { name: document.getElementById('p-name').value, price: Number(document.getElementById('p-price').value), stock: Number(document.getElementById('p-stock').value) };
+        db.collection("products").add(p); toggleModal('modal-product', false);
+    }
+    function saveRider() {
+        const r = { name: document.getElementById('r-name').value, phone: document.getElementById('r-phone').value, status: "active" };
+        db.collection("riders").add(r); toggleModal('modal-rider', false);
+    }
+    function toggleModal(id, s) { document.getElementById(id).classList.toggle('hidden', !s); }
+    function showASection(s) { 
+        ['dashboard', 'inventory', 'riders'].forEach(x => document.getElementById('a-'+x).classList.add('hidden'));
+        document.getElementById('a-'+s).classList.remove('hidden');
+    }
+
+    // ================= RIDER LOGIC =================
+
+    let riderName = "";
+    function riderLogin() {
+        riderName = document.getElementById('rider-auth-name').value;
+        if(!riderName) return;
+        document.getElementById('login-overlay').classList.add('hidden');
+        document.getElementById('main-rider-app').classList.remove('hidden');
+        document.getElementById('display-rider-name').innerText = riderName;
+        initRider();
+    }
+
+    function initRider() {
+        db.collection("orders").where("assignedTo", "==", riderName).onSnapshot(snap => {
+            const list = document.getElementById('active-tasks-list');
+            list.innerHTML = ""; let cash = 0;
+            snap.forEach(doc => {
+                const o = doc.data();
+                if(o.status === 'Delivered') { cash += 30; return; }
+                // Fix: encodeURIComponent for Google Maps
+                const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.customerAddress)}`;
+                list.innerHTML += `
+                    <div class="r-card">
+                        <h4>Order #${doc.id.substring(0,4)}</h4>
+                        <p>${o.customerAddress}</p>
+                        <div style="margin:10px 0;">
+                            <a href="tel:${o.customerPhone}" class="btn" style="background:var(--dark); color:white;">Call</a>
+                            <a href="${mapUrl}" target="_blank" class="btn" style="background:var(--dark); color:white;">Map</a>
+                        </div>
+                        <button class="btn" style="background:var(--yellow); width:100%;" onclick="updateRStatus('${doc.id}', '${o.status === 'Assigned' ? 'Picked' : 'Delivered'}')">
+                            ${o.status === 'Assigned' ? 'MARK PICKED' : 'MARK DELIVERED'}
+                        </button>
+                    </div>`;
+            });
+            document.getElementById('rider-today-cash').innerText = cash;
+        });
+    }
+
+    function updateRStatus(id, s) { db.collection("orders").doc(id).update({ status: s }); }
+
+    window.onload = () => { loadProducts(); trackUserOrder(); };
 </script>
 </body>
 </html>
