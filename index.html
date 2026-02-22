@@ -76,11 +76,14 @@ input{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:1px solid #c
 
 <script>
 /* 🔥 FIREBASE CONFIG (CHANGE THIS) */
-firebase.initializeApp({
- apiKey:"YOUR_API_KEY",
- authDomain:"YOUR_PROJECT.firebaseapp.com",
- projectId:"YOUR_PROJECT"
-});
+const firebaseConfig = {
+  apiKey: "AIzaSyC2zOBXJZenhCezfVNa4WdAYNFgG_ivb98",
+  authDomain: "fast8bondhu-6f6a6.firebaseapp.com",
+  projectId: "fast8bondhu-6f6a6",
+  storageBucket: "fast8bondhu-6f6a6.firebasestorage.app",
+  messagingSenderId: "796987979513",
+  appId: "1:796987979513:web:0befb96daba208f1bd5428"
+};
 const db=firebase.firestore();
 const auth=firebase.auth();
 
