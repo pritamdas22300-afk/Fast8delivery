@@ -92,14 +92,14 @@
 <script>
     // --- FIREBASE INIT ---
     const firebaseConfig = {
-  apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
-  authDomain: "fast8delivery-a90b4.firebaseapp.com",
-  databaseURL: "https://fast8delivery-a90b4-default-rtdb.firebaseio.com",
-  projectId: "fast8delivery-a90b4",
-  storageBucket: "fast8delivery-a90b4.firebasestorage.app",
-  messagingSenderId: "200027434311",
-  appId: "1:200027434311:web:9bc6caf3db527b602c3062"
-};
+      apiKey: "AIzaSyBpRhuVaHqznb9q8YEJP3Pg19MWv5camXE",
+      authDomain: "fast8delivery-a90b4.firebaseapp.com",
+      databaseURL: "https://fast8delivery-a90b4-default-rtdb.firebaseio.com",
+      projectId: "fast8delivery-a90b4",
+      storageBucket: "fast8delivery-a90b4.firebasestorage.app",
+      messagingSenderId: "200027434311",
+      appId: "1:200027434311:web:9bc6caf3db527b602c3062"
+    };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const auth = firebase.auth();
@@ -177,37 +177,48 @@
         document.getElementById('cart-modal').classList.toggle('active');
     }
 
-    // --- TRANSACTIONAL ORDERING (Production Safety) ---
+    // --- TRANSACTIONAL ORDERING (Fixed for Production) ---
     async function placeOrder() {
         const name = document.getElementById('cust-name').value;
         const phone = document.getElementById('cust-phone').value;
         const address = document.getElementById('cust-address').value;
 
-        if(!name || !phone || !address || cart.length === 0) return alert("Please fill all details!");
+        // Validation: Check if details are filled
+        if(!name || !phone || !address || cart.length === 0) {
+            return alert("Please fill all details correctly!");
+        }
         
         const btn = document.getElementById('place-order-btn');
         btn.disabled = true;
-        btn.innerText = "Processing...";
+        btn.innerText = "Processing Order...";
 
-        // Start Firestore Transaction to prevent stock race conditions
         try {
+            // Start Firestore Transaction to prevent stock race conditions
             await db.runTransaction(async (transaction) => {
-                const productRefs = cart.map(item => ({ ref: db.collection("products").doc(item.id), qty: item.qty }));
+                const productRefs = cart.map(item => ({ 
+                    ref: db.collection("products").doc(item.id), 
+                    qty: item.qty 
+                }));
                 
                 // 1. Verify all stock first
                 for (const p of productRefs) {
                     const sfDoc = await transaction.get(p.ref);
-                    if (!sfDoc.exists() || sfDoc.data().stock < p.qty) {
-                        throw "One or more items went out of stock!";
+                    
+                    // FIX: sfDoc.exists is a property in the Firebase compat SDK, not a function
+                    if (!sfDoc.exists || sfDoc.data().stock < p.qty) {
+                        const itemName = sfDoc.exists ? sfDoc.data().name : "Unknown Item";
+                        throw itemName + " is out of stock!";
                     }
                 }
 
-                // 2. Decrement stock
+                // 2. Decrement stock for each item
                 productRefs.forEach(p => {
-                    transaction.update(p.ref, { stock: firebase.firestore.FieldValue.increment(-p.qty) });
+                    transaction.update(p.ref, { 
+                        stock: firebase.firestore.FieldValue.increment(-p.qty) 
+                    });
                 });
 
-                // 3. Create Order
+                // 3. Create Order Record
                 const orderRef = db.collection("orders").doc();
                 transaction.set(orderRef, {
                     userId: currentUser.uid,
@@ -215,15 +226,20 @@
                     customerPhone: phone,
                     customerAddress: address,
                     items: cart.map(i => ({id: i.id, name: i.name, qty: i.qty, price: i.price})),
-                    totalAmount: cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0) + 20,
+                    totalAmount: cart.reduce((acc, curr) => acc + (curr.price * curr.qty), 0) + 20, // 20 is delivery fee
                     status: "Pending",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             });
 
             alert("Order Success! Delivery partner will be assigned soon.");
-            cart = []; updateCartUI(); toggleCart(); showPage('orders');
+            cart = []; 
+            updateCartUI(); 
+            toggleCart(); 
+            showPage('orders'); // Auto-switch to orders page
         } catch (e) {
+            // Error handling for transaction failures
+            console.error("Order Transaction Error:", e);
             alert("Order Failed: " + e);
         } finally {
             btn.disabled = false;
