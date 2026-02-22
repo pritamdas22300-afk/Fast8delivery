@@ -1,191 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fast8 Rider - Delivery Partner</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<meta charset="UTF-8">
+<title>Fast8 Bondhu – Delivery Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        :root { --red: #e63946; --yellow: #ffb703; --dark: #1d3557; --bg: #121212; --card: #1e1e1e; }
-        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
-        body { background-color: var(--bg); color: white; }
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-        /* --- Login UI --- */
-        #login-screen { padding: 40px 20px; text-align: center; height: 100vh; display: flex; flex-direction: column; justify-content: center; }
-        .input-group { margin-bottom: 20px; text-align: left; }
-        input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #333; background: #222; color: white; font-size: 16px; }
-        
-        /* --- Dashboard UI --- */
-        header { background: var(--red); padding: 25px 20px; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; display: flex; justify-content: space-between; align-items: center; }
-        .earning-card { background: rgba(255,255,255,0.15); padding: 10px 20px; border-radius: 15px; text-align: right; }
-        
-        .task-list { padding: 20px; }
-        .r-card { background: var(--card); border-radius: 20px; padding: 20px; margin-bottom: 20px; border: 1px solid #333; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-        .status-pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; text-transform: uppercase; background: var(--yellow); color: var(--dark); }
-
-        .btn { padding: 14px; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
-        .btn-main { background: var(--yellow); color: var(--dark); width: 100%; }
-        .btn-outline { background: transparent; border: 1px solid #444; color: white; flex: 1; }
-        
-        .hidden { display: none !important; }
-        #recaptcha-container { margin: 20px 0; }
-    </style>
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#f4f4f4;
+    margin:0;
+    padding:0;
+}
+header{
+    background:#e63946;
+    color:#fff;
+    padding:15px;
+    text-align:center;
+}
+.container{
+    padding:15px;
+}
+.card{
+    background:#fff;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:12px;
+    box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+button{
+    padding:8px 12px;
+    border:none;
+    border-radius:6px;
+    background:#e63946;
+    color:#fff;
+    cursor:pointer;
+    margin-top:8px;
+}
+select{
+    width:100%;
+    padding:8px;
+    margin-top:6px;
+}
+input{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+}
+.hidden{display:none;}
+</style>
 </head>
+
 <body>
 
-<div id="login-screen">
-    <h1 style="color: var(--yellow);">Rider Access</h1>
-    <p style="color: #888; margin-bottom: 30px;">Enter your phone to start delivery</p>
-    
-    <div class="input-group" id="phone-input-area">
-        <input type="tel" id="rider-phone" placeholder="+91 0000000000">
-        <div id="recaptcha-container"></div>
-        <button class="btn btn-main" onclick="sendOTP()">Send Verification Code</button>
-    </div>
+<header>
+<h2>🚚 Delivery Panel</h2>
+</header>
 
-    <div class="input-group hidden" id="otp-input-area">
-        <input type="number" id="otp-code" placeholder="Enter 6-digit OTP">
-        <button class="btn btn-main" onclick="verifyOTP()" style="margin-top: 10px;">Verify & Start</button>
-    </div>
+<div class="container">
+
+<!-- LOGIN -->
+<div id="loginBox">
+    <h3>Delivery Login</h3>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="login()">Login</button>
 </div>
 
-<div id="rider-dashboard" class="hidden">
-    <header>
-        <div>
-            <h2 id="rider-display-name">Fast8 Rider</h2>
-            <span id="rider-phone-display" style="font-size: 12px; opacity: 0.8;"></span>
-        </div>
-        <div class="earning-card">
-            <small>Today's Payout</small>
-            <div style="font-size: 20px; font-weight: 700;">₹<span id="rider-earnings">0</span></div>
-        </div>
-    </header>
+<!-- ORDERS -->
+<div id="ordersBox" class="hidden">
+    <h3>Assigned Orders</h3>
+    <div id="ordersList"></div>
+    <button onclick="logout()">Logout</button>
+</div>
 
-    <div class="task-list">
-        <h3 style="margin-bottom: 15px;">Assigned Tasks</h3>
-        <div id="active-tasks"></div>
-    </div>
 </div>
 
 <script>
-    // --- FIREBASE INIT ---
-    const firebaseConfig = { /* USE SAME CONFIG AS USER PANEL */ };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
+/* 🔥 Firebase Config */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID"
+};
+firebase.initializeApp(firebaseConfig);
 
-    let confirmationResult;
-    let riderData = null;
+const auth = firebase.auth();
+const db = firebase.firestore();
 
-    // --- AUTHENTICATION (PHONE OTP) ---
-    window.onload = () => {
-        window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', { 'size': 'invisible' });
-        
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                checkRiderRecord(user);
-            }
-        });
-    };
-
-    function sendOTP() {
-        const phone = document.getElementById('rider-phone').value;
-        auth.signInWithPhoneNumber(phone, window.recaptchaVerifier)
-            .then(res => {
-                confirmationResult = res;
-                document.getElementById('phone-input-area').classList.add('hidden');
-                document.getElementById('otp-input-area').classList.remove('hidden');
-            }).catch(err => alert(err.message));
+/* 🔐 Auth */
+auth.onAuthStateChanged(user=>{
+    if(user){
+        document.getElementById("loginBox").classList.add("hidden");
+        document.getElementById("ordersBox").classList.remove("hidden");
+        loadOrders(user.uid);
     }
+});
 
-    function verifyOTP() {
-        const code = document.getElementById('otp-code').value;
-        confirmationResult.confirm(code)
-            .then(result => checkRiderRecord(result.user))
-            .catch(err => alert("Invalid OTP"));
-    }
+/* Login */
+function login(){
+    const email = document.getElementById("email").value;
+    const pass = document.getElementById("password").value;
+    auth.signInWithEmailAndPassword(email, pass)
+    .catch(err=>alert(err.message));
+}
 
-    async function checkRiderRecord(user) {
-        // Find rider by phone in Firestore
-        const snap = await db.collection("riders").where("phone", "==", user.phoneNumber).get();
-        if (snap.empty) {
-            alert("This phone number is not registered as an official rider.");
-            auth.signOut();
-            location.reload();
+/* Logout */
+function logout(){
+    auth.signOut();
+    location.reload();
+}
+
+/* Load Assigned Orders */
+function loadOrders(uid){
+    db.collection("orders")
+    .where("deliveryBoyId","==",uid)
+    .onSnapshot(snap=>{
+        const list = document.getElementById("ordersList");
+        list.innerHTML="";
+        if(snap.empty){
+            list.innerHTML="<p>No assigned orders</p>";
             return;
         }
-        
-        riderData = snap.docs[0].data();
-        document.getElementById('login-screen').classList.add('hidden');
-        document.getElementById('rider-dashboard').classList.remove('hidden');
-        document.getElementById('rider-display-name').innerText = riderData.name;
-        document.getElementById('rider-phone-display').innerText = user.phoneNumber;
-        
-        startTaskListener(riderData.name);
-    }
+        snap.forEach(doc=>{
+            const o = doc.data();
+            list.innerHTML+=`
+            <div class="card">
+                <b>Order:</b> ${doc.id}<br>
+                <b>Name:</b> ${o.customerName}<br>
+                <b>Phone:</b> ${o.customerPhone}<br>
+                <b>Address:</b> ${o.customerAddress}<br>
+                <b>Total:</b> ₹${o.totalAmount}<br>
 
-    // --- TASK MANAGEMENT ---
-    function startTaskListener(name) {
-        db.collection("orders")
-          .where("assignedTo", "==", name)
-          .onSnapshot(snap => {
-            const list = document.getElementById('active-tasks');
-            list.innerHTML = "";
-            let earnings = 0;
-
-            snap.forEach(doc => {
-                const o = doc.data();
-                
-                // Calculate earnings: 30 per delivery
-                if(o.status === 'Delivered') {
-                    earnings += 30;
-                    return; 
-                }
-
-                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.customerAddress)}`;
-                
-                list.innerHTML += `
-                    <div class="r-card">
-                        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px;">
-                            <div>
-                                <span class="status-pill">${o.status}</span>
-                                <h4 style="margin-top:8px;">#${doc.id.substring(0,6)}</h4>
-                            </div>
-                            <div style="text-align:right">
-                                <small style="color:#888;">Collect COD</small>
-                                <div style="color:var(--yellow); font-weight:700;">₹${o.totalAmount}</div>
-                            </div>
-                        </div>
-                        
-                        <p style="font-size:14px; margin-bottom:15px;"><i class="fas fa-map-marker-alt" style="color:var(--red)"></i> ${o.customerAddress}</p>
-                        
-                        <div style="display:flex; gap:10px; margin-bottom:15px;">
-                            <a href="tel:${o.customerPhone}" class="btn btn-outline"><i class="fas fa-phone"></i> Call</a>
-                            <a href="${mapsUrl}" target="_blank" class="btn btn-outline"><i class="fas fa-directions"></i> Maps</a>
-                        </div>
-
-                        <button class="btn btn-main" onclick="updateStatus('${doc.id}', '${o.status}')">
-                            ${o.status === 'Assigned' ? 'MARK AS PICKED' : 'MARK AS DELIVERED'}
-                        </button>
-                    </div>`;
-            });
-            document.getElementById('rider-earnings').innerText = earnings;
+                <select onchange="updateStatus('${doc.id}',this.value)">
+                    <option ${o.status=="Assigned"?"selected":""}>Assigned</option>
+                    <option ${o.status=="Picked"?"selected":""}>Picked</option>
+                    <option ${o.status=="On The Way"?"selected":""}>On The Way</option>
+                    <option ${o.status=="Delivered"?"selected":""}>Delivered</option>
+                </select>
+            </div>
+            `;
         });
-    }
+    });
+}
 
-    async function updateStatus(id, currentStatus) {
-        const newStatus = (currentStatus === 'Assigned') ? 'Picked' : 'Delivered';
-        if(newStatus === 'Delivered' && !confirm("Confirm cash collected and order delivered?")) return;
-        
-        await db.collection("orders").doc(id).update({ status: newStatus });
-    }
+/* Update Order Status */
+function updateStatus(orderId,status){
+    db.collection("orders").doc(orderId).update({
+        status: status
+    });
+}
 </script>
+
 </body>
 </html>
